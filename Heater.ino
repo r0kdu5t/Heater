@@ -14,7 +14,7 @@ DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Te
 // Variables
 // =========
 // temperature
-float SET_TEMP = 18;
+byte SET_TEMP = 18;
 # define HYSTERESIS 2
 // TRIAC_PIN
 # define RED_PIN 5
@@ -28,7 +28,7 @@ void setup(void)
   // start serial port
   Serial.begin(9600);
   //Serial.println("Dallas Temperature IC Control Library Demo");
-  Serial.println( F("Heater.ino by <r0kdu5t@theatrix.org.nz"));
+  Serial.println( F("Heater.ino by <r0kdu5t@theatrix.org.nz>"));
 
   // Example, not tested. See: http://forum.arduino.cc/index.php?topic=158014.0
 
@@ -50,6 +50,14 @@ void setup(void)
     //sensors[sensorId].status_output
     digitalWrite(i, LOW); // Turn 'Off' LED.
   }
+/*
+ * DEBUG - Stuff
+ */
+  // What are my variable values
+  Serial.println(SET_TEMP, DEC);
+  Serial.println(HYSTERESIS, DEC);
+  Serial.println();
+  delay(2000); 
 
   // Start up the library
   sensors.begin();
@@ -73,12 +81,12 @@ void loop(void)
   Serial.println(temperature, DEC);
 
   // Check if sensed value is less than set value minus HYSTERESIS
-  if (temperature <= (SET_TEMP - HYSTERESIS)) {
+  if ((int) temperature < (SET_TEMP - HYSTERESIS)) {
     // Do what? Turn On Output
     digitalWrite(RED_PIN, HIGH);
   }
   // Check if sensed value is more than set value plus HYSTERESIS
-  if (temperature >= (SET_TEMP + HYSTERESIS)) {
+  if ((int) temperature > (SET_TEMP + HYSTERESIS)) {
     // Do what? Turn Off Output
     digitalWrite(BLUE_PIN, HIGH);
   }
