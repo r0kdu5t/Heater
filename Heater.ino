@@ -14,7 +14,7 @@ DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Te
 // Variables
 // =========
 // temperature
-byte SET_TEMP = 18;
+byte SET_TEMP = 25;
 # define HYSTERESIS 2
 // TRIAC_PIN
 # define RED_PIN 5
@@ -54,6 +54,7 @@ void setup(void)
  * DEBUG - Stuff
  */
   // What are my variable values
+  Serial.println();
   Serial.println(SET_TEMP, DEC);
   Serial.println(HYSTERESIS, DEC);
   Serial.println();
@@ -79,21 +80,26 @@ void loop(void)
   //Serial.println(sensors.getTempCByIndex(0));
   float temperature = sensors.getTempCByIndex(0); // Get value from sensor
   Serial.println(temperature, DEC);
-
+  //Serial.print((int)temperature);
+  
   // Check if sensed value is less than set value minus HYSTERESIS
-  if ((int) temperature < (SET_TEMP - HYSTERESIS)) {
+  if ((int)temperature < (SET_TEMP - HYSTERESIS)) {
     // Do what? Turn On Output
     digitalWrite(RED_PIN, HIGH);
+  } else {
+    digitalWrite(RED_PIN, LOW);
   }
   // Check if sensed value is more than set value plus HYSTERESIS
-  if ((int) temperature > (SET_TEMP + HYSTERESIS)) {
+  if ((int)temperature > (SET_TEMP + HYSTERESIS)) {
     // Do what? Turn Off Output
     digitalWrite(BLUE_PIN, HIGH);
+  } else {
+    digitalWrite(BLUE_PIN, LOW);
   }
-  digitalWrite(GREEN_PIN, HIGH);
+  //digitalWrite(GREEN_PIN, HIGH);
   delay(1000);
-  digitalWrite(RED_PIN, LOW);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(BLUE_PIN, LOW);
+  //digitalWrite(RED_PIN, LOW);
+  //digitalWrite(GREEN_PIN, LOW);
+  //digitalWrite(BLUE_PIN, LOW);
 
 }
