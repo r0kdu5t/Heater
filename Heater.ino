@@ -1,7 +1,7 @@
 /*
    Heater.ino
 */
-
+/*--------------------------- Configuration ------------------------------*/
 // Include the libraries we need
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -14,9 +14,10 @@ DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Te
 // Variables
 // =========
 // temperature
+boolean REQ_HEAT = false;
 byte SET_TEMP = 18;
 # define HYSTERESIS 2
-// TRIAC_PIN
+# define SSR_PIN 4
 # define RED_PIN 5
 # define GREEN_PIN 6
 # define BLUE_PIN 7
@@ -30,12 +31,7 @@ void setup(void)
   //Serial.println("Dallas Temperature IC Control Library Demo");
   Serial.println( F("Heater.ino by <r0kdu5t@theatrix.org.nz>"));
 
-  // Example, not tested. See: http://forum.arduino.cc/index.php?topic=158014.0
-
-  // Combined string in RAM
-  //Serial.println( "Compiled: " __DATE__ ", " __TIME__ ", " __VERSION__);
-
-  // The string in Flash
+  // Info String in Flash
   Serial.print( F("Compiled: "));
   Serial.print( F(__DATE__));
   Serial.print( F(", "));
@@ -43,6 +39,11 @@ void setup(void)
   //Serial.print( F(", "));
   //Serial.println( F(__FILE__));
   delay(2000);
+  
+  // Setup SSR control pin.
+  pinMode(SSR_PIN, OUTPUT);
+  digitalWrite(SSR_PIN, LOW); // Turn 'Off' SSR.
+
   // Setup the output status LEDs.
   byte i;
   for ( i = 5; i < 7; i++) {
@@ -50,15 +51,15 @@ void setup(void)
     //sensors[sensorId].status_output
     digitalWrite(i, LOW); // Turn 'Off' LED.
   }
-/*
- * DEBUG - Stuff
- */
+  /*
+     DEBUG - Stuff
+  */
   // What are my variable values
   Serial.println();
   Serial.println(SET_TEMP, DEC);
   Serial.println(HYSTERESIS, DEC);
   Serial.println();
-  delay(2000); 
+  delay(2000);
 
   // Start up the library
   sensors.begin();
@@ -81,17 +82,19 @@ void loop(void)
   float temperature = sensors.getTempCByIndex(0); // Get value from sensor
   Serial.println(temperature, DEC);
   //Serial.print((int)temperature);
-  
+
   // Check if sensed value is less than set value minus HYSTERESIS
   if ((int)temperature < (SET_TEMP - HYSTERESIS)) {
-    // Do what? Turn On Output
+    // Turn On Output
+    REQ_HEAT = true;
     digitalWrite(RED_PIN, HIGH);
   } else {
     digitalWrite(RED_PIN, LOW);
   }
   // Check if sensed value is more than set value plus HYSTERESIS
   if ((int)temperature > (SET_TEMP + HYSTERESIS)) {
-    // Do what? Turn Off Output
+    // Turn Off Output
+    REQ_HEAT = false;
     digitalWrite(GREEN_PIN, HIGH);
   } else {
     digitalWrite(GREEN_PIN, LOW);
@@ -101,5 +104,20 @@ void loop(void)
   //digitalWrite(RED_PIN, LOW);
   //digitalWrite(GREEN_PIN, LOW);
   //digitalWrite(BLUE_PIN, LOW);
+  if ( REQ_HEAT ) {
+    SSR_CTRL(true);
+  }
 
 }
+/*
+ * SSR control routine.
+ */
+void SSR_CTRL(boolean HEAT_CTRL ) {
+  if ( HEAT_CTRL ) {
+    digitalWrite(SSR_PIN, HIGH);
+    //
+  } else {
+    digitalWrite(SSR_PIN, LOW);
+  }
+}
+
