@@ -6,7 +6,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-#define ONE_WIRE_BUS 2  // Data wire is plugged into port 2 on the Arduino
+#define ONE_WIRE_BUS 5  // Data wire is plugged into port 2 on the Arduino
 
 OneWire oneWire(ONE_WIRE_BUS);  // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
@@ -14,13 +14,29 @@ DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Te
 // Variables
 // =========
 // temperature
-boolean REQ_HEAT = false;
+boolean REQ_HEAT = false; // REQUEST HEATING!
+boolean OVRDE = false;  // OVER_RIDE or MANUAL
+volatile boolean FLAG = false;
+unsigned long last_button_time = 0;
 byte SET_TEMP = 18;
 # define HYSTERESIS 2
-# define SSR_PIN 4
-# define RED_PIN 5
-# define GREEN_PIN 6
-# define BLUE_PIN 7
+
+# define SSR_PIN 6
+# define RED_PIN 15 // analogPin A1
+# define GREEN_PIN 16 // analogPin A2
+# define BLUE_PIN 17  // analogPin A3
+
+// Interrupt Service Routine (ISR)
+void pButton() {
+  unsigned long button_time = millis();
+  //check to see if increment() was called in the last 250 milliseconds
+  if (button_time - last_button_time > 250)
+  {
+    FLAG = true;
+    last_button_time = button_time;
+  }
+}  // end of isr
+
 /*
    The setup function. We only start the sensors here
 */
@@ -39,7 +55,13 @@ void setup(void)
   //Serial.print( F(", "));
   //Serial.println( F(__FILE__));
   delay(2000);
-  
+
+  /*
+     Enable interrupt 0 which uses pin 2
+     jump to the pButton function on rising edge
+  */
+  attachInterrupt(digitalPinToInterrupt(2), pButton, RISING);
+
   // Setup SSR control pin.
   pinMode(SSR_PIN, OUTPUT);
   digitalWrite(SSR_PIN, LOW); // Turn 'Off' SSR.
@@ -104,14 +126,20 @@ void loop(void)
   //digitalWrite(RED_PIN, LOW);
   //digitalWrite(GREEN_PIN, LOW);
   //digitalWrite(BLUE_PIN, LOW);
-  if ( REQ_HEAT ) {
+  if (FLAG) {
+    // interrupt has occurred
+    // REQ_HEAT = !REQ_HEAT
+    OVRDE = !OVRDE;
+  }
+  if ( REQ_HEAT || OVRDE ) {
     SSR_CTRL(true);
   }
 
-}
+} // End of loop()
+
 /*
- * SSR control routine.
- */
+   SSR control routine.
+*/
 void SSR_CTRL(boolean HEAT_CTRL ) {
   if ( HEAT_CTRL ) {
     digitalWrite(SSR_PIN, HIGH);
@@ -121,3 +149,27 @@ void SSR_CTRL(boolean HEAT_CTRL ) {
   }
 }
 
+/*
+   Playground for testing.
+   Refer to: https://arduino.stackexchange.com/questions/20994/why-the-need-to-use-the-volatile-keyword-on-global-variables-when-handling-inter
+  volatile boolean flag;
+
+  // Interrupt Service Routine (ISR)
+  void isr ()
+  {
+  flag = true;
+  }  // end of isr
+
+  void setup ()
+  {
+  attachInterrupt (0, isr, CHANGE);  // attach interrupt handler
+  }  // end of setup
+
+  void loop ()
+  {
+  if (flag)
+    {
+    // interrupt has occurred
+    }
+  }  // end of loop
+*/
