@@ -2,7 +2,14 @@
    Heater.ino
 */
 
+/* Network config */
+#define ENABLE_DHCP                 true   // true/false
+//
+static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };  // Set if no MAC ROM
+static uint8_t ip[] = { 192, 168, 1, 35 }; // Use if DHCP disabled
 // Include the libraries we need
+#include <SPI.h>
+#include "Ethernet.h"
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
@@ -20,6 +27,9 @@ byte SET_TEMP = 18;
 # define RED_PIN 5
 # define GREEN_PIN 6
 # define BLUE_PIN 7
+
+// Initialize the Ethernet client library
+EthernetClient client;
 /*
    The setup function. We only start the sensors here
 */
@@ -50,16 +60,35 @@ void setup(void)
     //sensors[sensorId].status_output
     digitalWrite(i, LOW); // Turn 'Off' LED.
   }
-/*
- * DEBUG - Stuff
- */
+  /*
+     DEBUG - Stuff
+  */
   // What are my variable values
   Serial.println();
   Serial.println(SET_TEMP, DEC);
   Serial.println(HYSTERESIS, DEC);
   Serial.println();
-  delay(2000); 
+  delay(2000);
 
+  // setup the Ethernet library to talk to the Wiznet board
+  if ( ENABLE_DHCP == true )
+  {
+    Ethernet.begin(mac);      // Use DHCP
+  } else {
+    Ethernet.begin(mac, ip);  // Use static address defined above
+  }
+
+  // Print IP address:
+  Serial.print(F("My IP: http://"));
+  for (byte thisByte = 0; thisByte < 4; thisByte++) {
+    // print the value of each byte of the IP address:
+    Serial.print(Ethernet.localIP()[thisByte], DEC);
+    if ( thisByte < 3 )
+    {
+      Serial.print(".");
+    }
+  }
+  Serial.println();
   // Start up the library
   sensors.begin();
 }
@@ -81,7 +110,7 @@ void loop(void)
   float temperature = sensors.getTempCByIndex(0); // Get value from sensor
   Serial.println(temperature, DEC);
   //Serial.print((int)temperature);
-  
+
   // Check if sensed value is less than set value minus HYSTERESIS
   if ((int)temperature < (SET_TEMP - HYSTERESIS)) {
     // Do what? Turn On Output
