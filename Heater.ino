@@ -37,8 +37,8 @@ EthernetClient client;
 */
 void setup(void)
 {
-  // start serial port
-  Serial.begin(9600);
+  Serial.begin(9600); // start serial port
+  Wire.begin(); // Wake up I2C bus
   //Serial.println("Dallas Temperature IC Control Library Demo");
   Serial.println( F("Heater.ino by <r0kdu5t@theatrix.org.nz>"));
 
