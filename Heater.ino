@@ -14,7 +14,7 @@ DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Te
 // Variables
 // =========
 // temperature
-byte SET_TEMP = 25;
+byte SET_TEMP = 18;
 # define HYSTERESIS 2
 // TRIAC_PIN
 # define RED_PIN 5
@@ -92,9 +92,9 @@ void loop(void)
   // Check if sensed value is more than set value plus HYSTERESIS
   if ((int)temperature > (SET_TEMP + HYSTERESIS)) {
     // Do what? Turn Off Output
-    digitalWrite(BLUE_PIN, HIGH);
+    digitalWrite(GREEN_PIN, HIGH);
   } else {
-    digitalWrite(BLUE_PIN, LOW);
+    digitalWrite(GREEN_PIN, LOW);
   }
   //digitalWrite(GREEN_PIN, HIGH);
   delay(1000);
