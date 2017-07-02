@@ -4,13 +4,15 @@
 /*--------------------------- Configuration ------------------------------*/
 /* Network config */
 #define ENABLE_DHCP                 true   // true/false
-//
+#define ENABLE_MAC_ADDRESS_ROM      true   // true/false
+#define MAC_I2C_ADDRESS             0x50   // Microchip 24AA125E48 I2C ROM address
 static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };  // Set if no MAC ROM
 static uint8_t ip[] = { 192, 168, 1, 35 }; // Use if DHCP disabled
 
 // Include the libraries we need
 #include <SPI.h>
 #include "Ethernet.h"
+#include "Wire.h"
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
@@ -50,8 +52,8 @@ void pButton() {
 */
 void setup(void)
 {
-  // start serial port
-  Serial.begin(9600);
+  Serial.begin(9600); // start serial port
+  Wire.begin(); // Wake up I2C bus
   //Serial.println("Dallas Temperature IC Control Library Demo");
   Serial.println( F("Heater.ino by <r0kdu5t@theatrix.org.nz>"));
 
@@ -76,7 +78,7 @@ void setup(void)
 
   // Setup the output status LEDs.
   byte i;
-  for ( i = 5; i < 7; i++) {
+  for ( i = 15; i < 17; i++) {
     pinMode(i, OUTPUT);
     //sensors[sensorId].status_output
     digitalWrite(i, LOW); // Turn 'Off' LED.
@@ -90,6 +92,23 @@ void setup(void)
   Serial.println(HYSTERESIS, DEC);
   Serial.println();
   delay(2000);
+
+  if ( ENABLE_MAC_ADDRESS_ROM == true )
+  {
+    Serial.print(F("Getting MAC address from ROM: "));
+    mac[0] = readRegister(0xFA);
+    mac[1] = readRegister(0xFB);
+    mac[2] = readRegister(0xFC);
+    mac[3] = readRegister(0xFD);
+    mac[4] = readRegister(0xFE);
+    mac[5] = readRegister(0xFF);
+  } else {
+    Serial.print(F("Using static MAC address: "));
+  }
+  // Print the IP address
+  char tmpBuf[17];
+  sprintf(tmpBuf, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  Serial.println(tmpBuf);
 
   // setup the Ethernet library to talk to the Wiznet board
   if ( ENABLE_DHCP == true )
@@ -153,10 +172,11 @@ void loop(void)
   //digitalWrite(RED_PIN, LOW);
   //digitalWrite(GREEN_PIN, LOW);
   //digitalWrite(BLUE_PIN, LOW);
-  if (FLAG) {
+  if (FLAG == true) {
     // interrupt has occurred
     // REQ_HEAT = !REQ_HEAT
     OVRDE = !OVRDE;
+    FLAG = false;
   }
   if ( REQ_HEAT || OVRDE ) {
     SSR_CTRL(true);
@@ -177,26 +197,21 @@ void SSR_CTRL(boolean HEAT_CTRL ) {
 }
 
 /*
-   Playground for testing.
-   Refer to: https://arduino.stackexchange.com/questions/20994/why-the-need-to-use-the-volatile-keyword-on-global-variables-when-handling-inter
-  volatile boolean flag;
+ * Required to read the MAC address ROM
+ */
+byte readRegister(byte r)
+{
+  unsigned char v;
+  Wire.beginTransmission(MAC_I2C_ADDRESS);
+  Wire.write(r);  // Register to read
+  Wire.endTransmission();
 
-  // Interrupt Service Routine (ISR)
-  void isr ()
+  Wire.requestFrom(MAC_I2C_ADDRESS, 1); // Read a byte
+  while (!Wire.available())
   {
-  flag = true;
-  }  // end of isr
+    // Wait
+  }
+  v = Wire.read();
+  return v;
+}
 
-  void setup ()
-  {
-  attachInterrupt (0, isr, CHANGE);  // attach interrupt handler
-  }  // end of setup
-
-  void loop ()
-  {
-  if (flag)
-    {
-    // interrupt has occurred
-    }
-  }  // end of loop
-*/
