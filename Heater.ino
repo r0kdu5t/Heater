@@ -8,11 +8,15 @@
 #define MAC_I2C_ADDRESS             0x50   // Microchip 24AA125E48 I2C ROM address
 static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };  // Set if no MAC ROM
 static uint8_t ip[] = { 192, 168, 1, 35 }; // Use if DHCP disabled
+/* MQTT config */
+//IPAddress broker(192, 168, 31, 65);       // Address of the MQTT broker - "spunkmeyer.theatrix.priv"
+static uint8_t broker[] = { 192, 168, 31, 65 };
 
 // Include the libraries we need
 #include <SPI.h>
 #include "Ethernet.h"
 #include "Wire.h"
+#include <PubSubClient.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
@@ -33,8 +37,13 @@ byte SET_TEMP = 18;
 # define GREEN_PIN 16 // analogPin A2
 # define BLUE_PIN 17  // analogPin A3
 
+//Start MQTT goodness
+void callbackMQTT(char* topic, byte* payload, unsigned int length) {
+}
+
 // Initialize the Ethernet client library
-EthernetClient client;
+EthernetClient ethClient;
+PubSubClient client( broker, 1883, callbackMQTT, ethClient); // MQTT object
 
 // Interrupt Service Routine (ISR)
 void pButton() {
@@ -46,6 +55,30 @@ void pButton() {
     last_button_time = button_time;
   }
 }  // end of isr
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    //if (client.connect("SleepyClient", "State", 1, 0, "DEAD")) { 
+    if (client.connect("SleepyClient")) {
+      Serial.println("connected");
+      // Once connected, publish an announcement...
+      client.publish("State", "hello world");
+      // ... and resubscribe
+      client.subscribe("inTopic");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      digitalWrite(BLUE_PIN, HIGH);
+      delay(5000);
+      digitalWrite(BLUE_PIN, LOW);
+    }
+  }
+}
 
 /*
    The setup function. We only start the sensors here
@@ -168,7 +201,7 @@ void loop(void)
     digitalWrite(GREEN_PIN, LOW);
   }
   //digitalWrite(GREEN_PIN, HIGH);
-  
+
   //digitalWrite(RED_PIN, LOW);
   //digitalWrite(GREEN_PIN, LOW);
   //digitalWrite(BLUE_PIN, LOW);
@@ -181,6 +214,10 @@ void loop(void)
   if ( REQ_HEAT || OVRDE ) {
     SSR_CTRL(true);
   }
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
   delay(1000);
 } // End of loop()
 
@@ -197,8 +234,8 @@ void SSR_CTRL(boolean HEAT_CTRL ) {
 }
 
 /*
- * Required to read the MAC address ROM
- */
+   Required to read the MAC address ROM
+*/
 byte readRegister(byte r)
 {
   unsigned char v;
