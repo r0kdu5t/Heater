@@ -11,6 +11,8 @@ static uint8_t ip[] = { 192, 168, 1, 35 }; // Use if DHCP disabled
 /* MQTT config */
 //IPAddress broker(192, 168, 31, 65);       // Address of the MQTT broker - "spunkmeyer.theatrix.priv"
 static uint8_t broker[] = { 192, 168, 31, 65 };
+// Topic base for all comms from this device.
+#define TOPICBASE "Home/Sleepy/"
 
 // Include the libraries we need
 #include <SPI.h>
@@ -61,8 +63,8 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    //if (client.connect("SleepyClient", "State", 1, 0, "DEAD")) { 
-    if (client.connect("SleepyClient")) {
+    if (client.connect("SleepyClient",(char *)TOPICBASE "State", 1, 0, "DEAD")) { 
+    //if (client.connect("SleepyClient")) {
       Serial.println("connected");
       // Once connected, publish an announcement...
       client.publish("State", "hello world");
@@ -250,5 +252,13 @@ byte readRegister(byte r)
   }
   v = Wire.read();
   return v;
+}
+
+void Publish(char *Topic, char *Message)
+{
+  char TopicBase[80] = TOPICBASE;
+
+  strcat(TopicBase, Topic);
+  client.publish(TopicBase, Message);
 }
 
