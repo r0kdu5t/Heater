@@ -42,8 +42,8 @@ unsigned long LastTempMillis = 0;       // Stores the last millis() for determin
 # define BLUE_PIN 17  // analogPin A3
 
 //Start MQTT goodness
-void callbackMQTT(char* topic, byte* payload, unsigned int length) {
-  payload[length] = 0;    // Hack to be able to use this as a char string.
+void callback(char* topic, byte* payload, unsigned int length) {
+  //payload[length] = 0;    // Hack to be able to use this as a char string.
 
   if (strstr(topic, TOPICBASE "Config/"))
   {
@@ -66,7 +66,7 @@ void callbackMQTT(char* topic, byte* payload, unsigned int length) {
 
 // Initialize the Ethernet client library
 EthernetClient ethClient;
-PubSubClient client( broker, 1883, callbackMQTT, ethClient); // MQTT object
+PubSubClient mqttClient( broker, 1883, callback, ethClient); // MQTT object
 
 // Interrupt Service Routine (ISR)
 void pButton() {
@@ -81,21 +81,21 @@ void pButton() {
 
 void reconnect() {
   // Loop until we're reconnected
-  while (!client.connected()) {
+  while (!mqttClient.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect("SleepyClient", (char *)TOPICBASE "State", 1, 0, "DEAD")) {
-      //if (client.connect("SleepyClient")) {
+    if (mqttClient.connect("SleepyClient", (char *)TOPICBASE "State", 1, 0, "DEAD")) {
+      //if (mqttClient.connect("SleepyClient")) {
       Serial.println("connected");
       // Once connected, publish an announcement...
       Publish((char *)"State", (char *)"BOOTUP");
       // ... and resubscribe
       // Subscribe to enable bi-directional comms.
-      client.subscribe(TOPICBASE "Config/#");  // Allow bootup config fetching using MQTT persist flag!
-      //client.subscribe(TOPICBASE "Put/#");     // Send commands to this device, use Home/LetterBox/Get/# for responses.
+      mqttClient.subscribe(TOPICBASE "Config/#");  // Allow bootup config fetching using MQTT persist flag!
+      //mqttClient.subscribe(TOPICBASE "Put/#");     // Send commands to this device, use Home/<device_name>/Get/# for responses.
     } else {
       Serial.print("failed, rc=");
-      Serial.print(client.state());
+      Serial.print(mqttClient.state());
       Serial.println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
       digitalWrite(BLUE_PIN, HIGH);
@@ -196,19 +196,26 @@ void setup(void)
 */
 void loop(void)
 {
+  if (!mqttClient.connected()) {
+    reconnect();
+  }
+  mqttClient.loop();
+  // call sensors.requestTemperatures() to issue a global temperature
+  // request to all devices on the bus
+  //Serial.print("Requesting temperatures...");
+  sensors.requestTemperatures(); // Send the command to get temperatures
+  //Serial.println("DONE");
+  // After we got the temperatures, we can print them here.
+  // We use the function ByIndex, and as an example get the temperature from the first sensor only.
+  // Serial.print("Temperature for the device 1 (index 0) is: ");
+  // Serial.println(tempValue, DEC);
+  //Serial.println(sensors.getTempCByIndex(0));
+  tempValue = sensors.getTempCByIndex(0); // Get value from sensor
+
   if (confTempDelay && (millis() - LastTempMillis > confTempDelay))
   {
     LastTempMillis = millis();
-    // call sensors.requestTemperatures() to issue a global temperature
-    // request to all devices on the bus
-    //Serial.print("Requesting temperatures...");
-    sensors.requestTemperatures(); // Send the command to get temperatures
-    //Serial.println("DONE");
-    // After we got the temperatures, we can print them here.
-    // We use the function ByIndex, and as an example get the temperature from the first sensor only.
     Serial.print("Temperature for the device 1 (index 0) is: ");
-    //Serial.println(sensors.getTempCByIndex(0));
-    tempValue = sensors.getTempCByIndex(0); // Get value from sensor
     Serial.println(tempValue, DEC);
     //Serial.print((int)temperature);
     PublishFloat((char *)"Temperature", tempValue); // Publish temperature value on topic
@@ -244,10 +251,7 @@ void loop(void)
   if ( REQ_HEAT || OVRDE ) {
     SSR_CTRL(true);
   }
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
+
   delay(1000);
 } // End of loop()
 
@@ -289,7 +293,7 @@ void Publish(char *Topic, char *Message)
   char TopicBase[80] = TOPICBASE;
 
   strcat(TopicBase, Topic);
-  client.publish(TopicBase, Message);
+  mqttClient.publish(TopicBase, Message);
 }
 
 void PublishFloat(char *Topic, float Value)
@@ -301,6 +305,6 @@ void PublishFloat(char *Topic, float Value)
     dtostrf(Value, 5, 2, Message);
 
   strcat(TopicBase, Topic);
-  client.publish(TopicBase, Message);
+  mqttClient.publish(TopicBase, Message);
 }
 
