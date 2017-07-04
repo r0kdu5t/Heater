@@ -63,13 +63,15 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect("SleepyClient",(char *)TOPICBASE "State", 1, 0, "DEAD")) { 
-    //if (client.connect("SleepyClient")) {
+    if (client.connect("SleepyClient", (char *)TOPICBASE "State", 1, 0, "DEAD")) {
+      //if (client.connect("SleepyClient")) {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      client.publish("State", "hello world");
+      Publish((char *)"State", (char *)"BOOTUP");
       // ... and resubscribe
-      client.subscribe("inTopic");
+      // Subscribe to enable bi-directional comms.
+      client.subscribe(TOPICBASE "Config/#");  // Allow bootup config fetching using MQTT persist flag!
+      //client.subscribe(TOPICBASE "Put/#");     // Send commands to this device, use Home/LetterBox/Get/# for responses.
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -185,7 +187,7 @@ void loop(void)
   float temperature = sensors.getTempCByIndex(0); // Get value from sensor
   Serial.println(temperature, DEC);
   //Serial.print((int)temperature);
-
+  PublishFloat((char *)"Temperature", temperature);
   // Check if sensed value is less than set value minus HYSTERESIS
   if ((int)temperature < (SET_TEMP - HYSTERESIS)) {
     // Turn On Output
@@ -257,6 +259,18 @@ byte readRegister(byte r)
 void Publish(char *Topic, char *Message)
 {
   char TopicBase[80] = TOPICBASE;
+
+  strcat(TopicBase, Topic);
+  client.publish(TopicBase, Message);
+}
+
+void PublishFloat(char *Topic, float Value)
+{
+  char TopicBase[80] = TOPICBASE;
+  char Message[10] = "NULL";
+
+  if (!isnan(Value))
+    dtostrf(Value, 5, 2, Message);
 
   strcat(TopicBase, Topic);
   client.publish(TopicBase, Message);
