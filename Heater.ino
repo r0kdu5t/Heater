@@ -33,6 +33,8 @@ boolean OVRDE = false;  // OVER_RIDE or MANUAL
 volatile boolean FLAG = false;
 unsigned long last_button_time = 0;
 byte SET_TEMP = 18;
+unsigned long confTempDelay = 10000;    // Default temperature publish delay.
+unsigned long LastTempMillis = 0;       // Stores the last millis() for determining update delay.
 # define HYSTERESIS 2
 # define SSR_PIN 6
 # define RED_PIN 15 // analogPin A1
@@ -41,6 +43,23 @@ byte SET_TEMP = 18;
 
 //Start MQTT goodness
 void callbackMQTT(char* topic, byte* payload, unsigned int length) {
+  payload[length] = 0;    // Hack to be able to use this as a char string.
+
+  if (strstr(topic, TOPICBASE "Config/"))
+  {
+    if (strstr(topic, "setTemp"))
+      SET_TEMP = atoi((const char *)payload);
+
+    /*else if (strstr(topic, "DeliverDelay"))
+      confDeliverDelay = atoi((const char *)payload);
+
+    else if (strstr(topic, "CheckDelay"))
+      confCheckDelay = atoi((const char *)payload);
+
+    else if (strstr(topic, "LuxDelay"))
+      confLuxDelay = atoi((const char *)payload);
+   */    
+  }
 }
 
 // Initialize the Ethernet client library
@@ -187,7 +206,8 @@ void loop(void)
   float temperature = sensors.getTempCByIndex(0); // Get value from sensor
   Serial.println(temperature, DEC);
   //Serial.print((int)temperature);
-  PublishFloat((char *)"Temperature", temperature);
+  PublishFloat((char *)"Temperature", temperature); // Publish temperature value on topic
+
   // Check if sensed value is less than set value minus HYSTERESIS
   if ((int)temperature < (SET_TEMP - HYSTERESIS)) {
     // Turn On Output
@@ -231,9 +251,11 @@ void loop(void)
 void SSR_CTRL(boolean HEAT_CTRL ) {
   if ( HEAT_CTRL ) {
     digitalWrite(SSR_PIN, HIGH);
+    Publish((char *)"SSR", (char *)"ON");
     //
   } else {
     digitalWrite(SSR_PIN, LOW);
+    Publish((char *)"SSR", (char *)"OFF");
   }
 }
 
