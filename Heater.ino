@@ -27,7 +27,7 @@ OneWire oneWire(ONE_WIRE_BUS);  // Setup a oneWire instance to communicate with 
 DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
 
 /*--------------------------- Variables ------------------------------*/
-// temperature
+float tempValue;
 boolean REQ_HEAT = false; // REQUEST HEATING!
 boolean OVRDE = false;  // OVER_RIDE or MANUAL
 volatile boolean FLAG = false;
@@ -49,16 +49,18 @@ void callbackMQTT(char* topic, byte* payload, unsigned int length) {
   {
     if (strstr(topic, "setTemp"))
       SET_TEMP = atoi((const char *)payload);
-
+    //
+    Serial.print("Set temperature ");
+    Serial.println(SET_TEMP, DEC);
     /*else if (strstr(topic, "DeliverDelay"))
       confDeliverDelay = atoi((const char *)payload);
 
-    else if (strstr(topic, "CheckDelay"))
+      else if (strstr(topic, "CheckDelay"))
       confCheckDelay = atoi((const char *)payload);
 
-    else if (strstr(topic, "LuxDelay"))
+      else if (strstr(topic, "LuxDelay"))
       confLuxDelay = atoi((const char *)payload);
-   */    
+    */
   }
 }
 
@@ -194,22 +196,26 @@ void setup(void)
 */
 void loop(void)
 {
-  // call sensors.requestTemperatures() to issue a global temperature
-  // request to all devices on the bus
-  //Serial.print("Requesting temperatures...");
-  sensors.requestTemperatures(); // Send the command to get temperatures
-  //Serial.println("DONE");
-  // After we got the temperatures, we can print them here.
-  // We use the function ByIndex, and as an example get the temperature from the first sensor only.
-  Serial.print("Temperature for the device 1 (index 0) is: ");
-  //Serial.println(sensors.getTempCByIndex(0));
-  float temperature = sensors.getTempCByIndex(0); // Get value from sensor
-  Serial.println(temperature, DEC);
-  //Serial.print((int)temperature);
-  PublishFloat((char *)"Temperature", temperature); // Publish temperature value on topic
+  if (confTempDelay && (millis() - LastTempMillis > confTempDelay))
+  {
+    LastTempMillis = millis();
+    // call sensors.requestTemperatures() to issue a global temperature
+    // request to all devices on the bus
+    //Serial.print("Requesting temperatures...");
+    sensors.requestTemperatures(); // Send the command to get temperatures
+    //Serial.println("DONE");
+    // After we got the temperatures, we can print them here.
+    // We use the function ByIndex, and as an example get the temperature from the first sensor only.
+    Serial.print("Temperature for the device 1 (index 0) is: ");
+    //Serial.println(sensors.getTempCByIndex(0));
+    tempValue = sensors.getTempCByIndex(0); // Get value from sensor
+    Serial.println(tempValue, DEC);
+    //Serial.print((int)temperature);
+    PublishFloat((char *)"Temperature", tempValue); // Publish temperature value on topic
+  }
 
   // Check if sensed value is less than set value minus HYSTERESIS
-  if ((int)temperature < (SET_TEMP - HYSTERESIS)) {
+  if ((int)tempValue < (SET_TEMP - HYSTERESIS)) {
     // Turn On Output
     REQ_HEAT = true;
     digitalWrite(RED_PIN, HIGH);
@@ -217,7 +223,7 @@ void loop(void)
     digitalWrite(RED_PIN, LOW);
   }
   // Check if sensed value is more than set value plus HYSTERESIS
-  if ((int)temperature > (SET_TEMP + HYSTERESIS)) {
+  if ((int)tempValue > (SET_TEMP + HYSTERESIS)) {
     // Turn Off Output
     REQ_HEAT = false;
     digitalWrite(GREEN_PIN, HIGH);
