@@ -39,9 +39,9 @@ void ethernetFromDS() {
 
   Serial.print ("Searching for DS18B20...");
 
-  node_id.reset_search();
+  oneWire.reset_search();
 
-  if ( !node_id.search(dsAddress) )
+  if ( !oneWire.search(dsAddress) )
   {
 
     Serial.println("none found. Using specified MAC Address.");
@@ -57,6 +57,8 @@ void ethernetFromDS() {
     mac[4] = dsAddress[6];
     mac[5] = dsAddress[7];
   }
+}
+/*
   // Generate macstr for node naming convention?
   snprintf(macstr, 18, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
@@ -64,7 +66,7 @@ void ethernetFromDS() {
   Serial.print("Ethernet MAC = (");
   Serial.print(macstr);
   Serial.println(")...");
-
+*/
 /*
    The setup function. We only start the sensors here
 */
@@ -95,12 +97,16 @@ void setup(void)
     //sensors[sensorId].status_output
     digitalWrite(i, LOW); // Turn 'Off' LED.
   }
-
+  //Start Ethernet using mac formed from DS
+  if ( MAC_DS == true ) {
+    Serial.println("Starting ethernetFromDS...");
+    ethernetFromDS();
+  }
   // Print the MAC address
   char tmpBuf[17];
   sprintf(tmpBuf, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   Serial.println(tmpBuf);
-    
+
   /*
      DEBUG - Stuff
   */
