@@ -32,7 +32,7 @@ boolean REQ_HEAT = false; // REQUEST HEATING!
 boolean OVRDE = false;  // OVER_RIDE or MANUAL
 volatile boolean FLAG = false;
 unsigned long last_button_time = 0;
-byte SET_TEMP = 18;
+byte confSetTemp = 18;
 unsigned long confTempDelay = 10000;    // Default temperature publish delay.
 unsigned long LastTempMillis = 0;       // Stores the last millis() for determining update delay.
 # define HYSTERESIS 2
@@ -48,14 +48,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (strstr(topic, TOPICBASE "Config/"))
   {
     if (strstr(topic, "setTemp"))
-      SET_TEMP = atoi((const char *)payload);
+      confSetTemp = atoi((const char *)payload);
     //
-    Serial.print("Set temperature ");
-    Serial.println(SET_TEMP, DEC);
-    /*else if (strstr(topic, "DeliverDelay"))
-      confDeliverDelay = atoi((const char *)payload);
+    //Serial.print("Set temperature "); //Serial.println(confSetTemp, DEC);
+    
+    else if (strstr(topic, "TempDelay"))
+      confTempDelay = atoi((const char *)payload);
 
-      else if (strstr(topic, "CheckDelay"))
+    /*else if (strstr(topic, "CheckDelay"))
       confCheckDelay = atoi((const char *)payload);
 
       else if (strstr(topic, "LuxDelay"))
@@ -146,7 +146,7 @@ void setup(void)
   */
   // What are my variable values
   Serial.println();
-  Serial.println(SET_TEMP, DEC);
+  Serial.println(confSetTemp, DEC);
   Serial.println(HYSTERESIS, DEC);
   Serial.println();
   delay(2000);
@@ -222,7 +222,7 @@ void loop(void)
   }
 
   // Check if sensed value is less than set value minus HYSTERESIS
-  if ((int)tempValue < (SET_TEMP - HYSTERESIS)) {
+  if ((int)tempValue < (confSetTemp - HYSTERESIS)) {
     // Turn On Output
     REQ_HEAT = true;
     digitalWrite(RED_PIN, HIGH);
@@ -230,7 +230,7 @@ void loop(void)
     digitalWrite(RED_PIN, LOW);
   }
   // Check if sensed value is more than set value plus HYSTERESIS
-  if ((int)tempValue > (SET_TEMP + HYSTERESIS)) {
+  if ((int)tempValue > (confSetTemp + HYSTERESIS)) {
     // Turn Off Output
     REQ_HEAT = false;
     digitalWrite(GREEN_PIN, HIGH);
@@ -259,13 +259,20 @@ void loop(void)
    SSR control routine.
 */
 void SSR_CTRL(boolean HEAT_CTRL ) {
-  if ( HEAT_CTRL ) {
+  static bool SENT_SSR_STATUS = false;
+  if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
     digitalWrite(SSR_PIN, HIGH);
     Publish((char *)"SSR", (char *)"ON");
+    SENT_SSR_STATUS = true;
     //
-  } else {
+  }
+  else if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
+    // Do nothing - No repeat MQTT Publish
+  }
+  else if ( HEAT_CTRL == false && SENT_SSR_STATUS == false) {
     digitalWrite(SSR_PIN, LOW);
     Publish((char *)"SSR", (char *)"OFF");
+    SENT_SSR_STATUS = false;
   }
 }
 
