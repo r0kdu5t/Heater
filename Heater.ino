@@ -39,23 +39,32 @@ unsigned long confTempDelay = 10000;    // Default temperature publish delay.
 unsigned long LastTempMillis = 0;       // Stores the last millis() for determining update delay.
 # define HYSTERESIS 2
 # define SSR_PIN 6
+bool SENT_SSR_STATUS = false;
+
 # define RED_PIN 15 // analogPin A1
 # define GREEN_PIN 16 // analogPin A2
 # define BLUE_PIN 17  // analogPin A3
 
 //Start MQTT goodness
 void callback(char* topic, byte* payload, unsigned int length) {
-  //payload[length] = 0;    // Hack to be able to use this as a char string.
+  payload[length] = '\0';    // Hack to be able to use this as a char string.
 
   if (strstr(topic, TOPICBASE "Config/"))
   {
-    if (strstr(topic, "setTemp"))
+    if (strstr(topic, "setTemp")) {
       confSetTemp = atoi((const char *)payload);
-    //
-    //Serial.print("Set temperature "); //Serial.println(confSetTemp, DEC);
-    
-    else if (strstr(topic, "TempDelay"))
+      //
+      Serial.print("Set temperature is now: ");
+      //Serial.println(confSetTemp, DEC);
+      Serial.println(confSetTemp);
+    }
+    else if (strstr(topic, "TempDelay")) {
       confTempDelay = atoi((const char *)payload);
+      Serial.print("Temperature send delay is now ");
+      //Serial.println(confSetTemp, DEC);
+      Serial.print(confTempDelay);
+      Serial.println(" milliSeconds.");
+    }
 
     /*else if (strstr(topic, "CheckDelay"))
       confCheckDelay = atoi((const char *)payload);
@@ -140,7 +149,7 @@ void reconnect() {
 void setup(void)
 {
   Serial.begin(9600); // start serial port
-  
+
   //Serial.println("Dallas Temperature IC Control Library Demo");
   Serial.println( F("Heater.ino by <r0kdu5t@theatrix.org.nz>"));
 
@@ -148,7 +157,7 @@ void setup(void)
   Serial.print( F("Compiled: "));
   Serial.print( F(__DATE__));
   Serial.print( F(", "));
-  Serial.print( F(__TIME__));
+  Serial.println( F(__TIME__));
   //Serial.print( F(", "));
   //Serial.println( F(__FILE__));
   delay(2000);
@@ -170,7 +179,7 @@ void setup(void)
     //sensors[sensorId].status_output
     digitalWrite(i, LOW); // Turn 'Off' LED.
   }
-  
+
   //Start Ethernet using mac formed from DS
   if ( MAC_DS == true )
   {
@@ -290,17 +299,17 @@ void loop(void)
     SSR_CTRL(true);
   }
 
-  delay(1000);
+  //delay(1000);
 } // End of loop()
 
 /*
    SSR control routine.
 */
 void SSR_CTRL(boolean HEAT_CTRL ) {
-  static bool SENT_SSR_STATUS = false;
   if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
     digitalWrite(SSR_PIN, HIGH);
     Publish((char *)"SSR", (char *)"ON");
+    Serial.println("SSR_CTRL: ON ");
     SENT_SSR_STATUS = true;
     //
   }
@@ -310,6 +319,7 @@ void SSR_CTRL(boolean HEAT_CTRL ) {
   else if ( HEAT_CTRL == false && SENT_SSR_STATUS == false) {
     digitalWrite(SSR_PIN, LOW);
     Publish((char *)"SSR", (char *)"OFF");
+    Serial.println("SSR_CTRL: OFF ");
     SENT_SSR_STATUS = false;
   }
 }
