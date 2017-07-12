@@ -4,8 +4,10 @@
 /*--------------------------- Configuration ------------------------------*/
 /* Network config */
 #define ENABLE_DHCP                 true   // true/false
-#define ENABLE_MAC_ADDRESS_ROM      true   // true/false
+#define MAC_DS                      true   // true/false If use DS for MAC then make following false
+#define ENABLE_MAC_ADDRESS_ROM      false   // true/false
 #define MAC_I2C_ADDRESS             0x50   // Microchip 24AA125E48 I2C ROM address
+//
 static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };  // Set if no MAC ROM
 static uint8_t ip[] = { 192, 168, 1, 35 }; // Use if DHCP disabled
 
@@ -47,6 +49,42 @@ void pButton() {
   }
 }  // end of isr
 
+void ethernetFromDS() {
+  byte i;
+  byte dsAddress[8];
+  delay( 500 );
+
+  Serial.print ("Searching for DS18B20...");
+
+  oneWire.reset_search();
+
+  if ( !oneWire.search(dsAddress) )
+  {
+
+    Serial.println("none found. Using specified MAC Address.");
+
+  }
+  else {
+
+    Serial.print( "Success! \nSetting MAC address...." );
+
+    mac[1] = dsAddress[3];
+    mac[2] = dsAddress[4];
+    mac[3] = dsAddress[5];
+    mac[4] = dsAddress[6];
+    mac[5] = dsAddress[7];
+  }
+}
+/*
+  // Generate macstr for node naming convention?
+  snprintf(macstr, 18, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+  Serial.println();
+  Serial.print("Ethernet MAC = (");
+  Serial.print(macstr);
+  Serial.println(")...");
+*/
+
 /*
    The setup function. We only start the sensors here
 */
@@ -83,6 +121,17 @@ void setup(void)
     //sensors[sensorId].status_output
     digitalWrite(i, LOW); // Turn 'Off' LED.
   }
+  //Start Ethernet using mac formed from DS
+  if ( MAC_DS == true ) {
+    Serial.println("Starting ethernetFromDS...");
+    ethernetFromDS();
+  }
+/*  
+  // Print the MAC address
+  char tmpBuf[17];
+  sprintf(tmpBuf, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  Serial.println(tmpBuf);
+*/
   /*
      DEBUG - Stuff
   */
