@@ -313,12 +313,12 @@ void SSR_CTRL(boolean CTRL_STATE ) {
   if ( CTRL_STATE == true )
   {
     digitalWrite(SSR_PIN, HIGH);
-    Serial.println("SSR_CTRL: ON ");
+    //Serial.println("SSR_CTRL: ON ");
   }
   else
   {
     digitalWrite(SSR_PIN, LOW);
-    Serial.println("SSR_CTRL: OFF "); 
+    //Serial.println("SSR_CTRL: OFF "); 
   }
   /*
   if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
