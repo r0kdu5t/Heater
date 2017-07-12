@@ -39,7 +39,7 @@ unsigned long confTempDelay = 10000;    // Default temperature publish delay.
 unsigned long LastTempMillis = 0;       // Stores the last millis() for determining update delay.
 # define HYSTERESIS 2
 # define SSR_PIN 6
-bool SENT_SSR_STATUS = false;
+//bool SENT_SSR_STATUS = false;
 
 # define RED_PIN 15 // analogPin A1
 # define GREEN_PIN 16 // analogPin A2
@@ -298,6 +298,9 @@ void loop(void)
   if ( REQ_HEAT || OVRDE ) {
     SSR_CTRL(true);
   }
+  else {
+    SSR_CTRL(false);
+  }
 
   //delay(1000);
 } // End of loop()
@@ -305,7 +308,19 @@ void loop(void)
 /*
    SSR control routine.
 */
-void SSR_CTRL(boolean HEAT_CTRL ) {
+void SSR_CTRL(boolean CTRL_STATE ) {
+  static bool SENT_STATUS = false;
+  if ( CTRL_STATE == true )
+  {
+    digitalWrite(SSR_PIN, HIGH);
+    Serial.println("SSR_CTRL: ON ");
+  }
+  else
+  {
+    digitalWrite(SSR_PIN, LOW);
+    Serial.println("SSR_CTRL: OFF "); 
+  }
+  /*
   if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
     digitalWrite(SSR_PIN, HIGH);
     Publish((char *)"SSR", (char *)"ON");
@@ -321,7 +336,8 @@ void SSR_CTRL(boolean HEAT_CTRL ) {
     Publish((char *)"SSR", (char *)"OFF");
     Serial.println("SSR_CTRL: OFF ");
     SENT_SSR_STATUS = false;
-  }
+ }
+ */
 }
 
 /*
