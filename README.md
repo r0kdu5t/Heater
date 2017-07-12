@@ -19,18 +19,37 @@ Reads the temperature from a DS18B20 sensor to control a relay/SSR to control at
 ### *Board Connections*
 Pin Num | Description | Used for
 ------- | ----------- | --------
- 2 | digitalPin | PushButton (INT0)
- 5 | digitalPin | DS18B20 temperature sensor(s)
- 6 | digitalPin | SSR_PIN
- 10 | digitalPin | Ethernet / SS~
- 11 | digitalPin | Ethernet / MOSI~
- 12 | digitalPin | Ethernet / MISO
- 13 | digitalPin | Ethernet / SCK
+ 
+ 
+ 
  A0 | analogPin | CSLT Hall Effect current sensor?
  15 | digitalPin | LED RED_PIN [analogPin A1]
- 16 | digitalPin | LED GREEN_PIN [analogPin A2] 
- 17 | digitalPin | LED BLUE_PIN [analogPin A3]
+ 16 | digitalPin | LED  [analogPin A2] 
+ 17 | digitalPin | LED  [analogPin A3]
 
+### *Board Connection Table*
+
+| | Function_> | |RX|TX|INT0|INT1|4|PWM|PWM|7|8|PWM|SS|MOSI|MISO| | | | |SDA|SCL|
+|----|----------|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| | Digital pins | |0|1|2|3|4|5|6|7|8|9|10|11|12|13|(14)|(15)|(16)|(17)|(18)|(19)|
+| Analogue pins | | | | | | | | | | | |  |  |  |0|1|2|3|4|5|
+| pButton | PushButton ||||X||||||||||||||||||
+| oneWire | DS18B20 temperature sensor(s) ||0|1|2|3|4|X|6|7|8|9|10|11|12|13|(14)|(15)|(16)|(17)|(18)|(19)|
+| SSR_PIN | Control output ||0|1|2|3|4|5|X|7|8|9|10|11|12|13|(14)|(15)|(16)|(17)|(18)|(19)|
+| pushFb | LED in switch ||0|1|2|3|4|5|6|7|8|9|10|11|12|13|(14)|(15)|(16)|(17)|(18)|(19)|
+| SS~ | Ethernet ||0|1|2|3|4|5|6|7|8|9|X|11|12|13|(14)|(15)|(16)|(17)|(18)|(19)|
+| MOSI~ | Ethernet ||0|1|2|3|4|5|6|7|8|9|10|X|12|13|(14)|(15)|(16)|(17)|(18)|(19)|
+| MISO | Ethernet ||0|1|2|3|4|5|6|7|8|9|10|11|X|13|(14)|(15)|(16)|(17)|(18)|(19)|
+| SCK | Ethernet ||0|1|2|3|4|5|6|7|8|9|10|11|12|X|(14)|(15)|(16)|(17)|(18)|(19)|
+| LOAD | CSLT Hall Effect current sensor? ||0|1|2|3|4|5|6|7|8|9|10|11|12|13|X|(15)|(16)|(17)|(18)|(19)|
+| RED_PIN | Red LED ||0|1|2|3|4|5|6|7|8|9|10|11|12|13|(14)|X|(16)|(17)|(18)|(19)|
+| GREEN_PIN | Green LED ||0|1|2|3|4|5|6|7|8|9|10|11|12|13|(14)|(15)|X|(17)|(18)|(19)|
+| BLUE_PIN | Blue LED ||0|1|2|3|4|5|6|7|8|9|10|11|12|13|(14)|(15)|(16)|X|(18)|(19)|
+
+<!--
+	http://alvinalexander.com/technology/markdown-comments-syntax-not-in-generated-output
+Name | Description | Digital pins |0|1|2|3|4|5|6|7|8|9|10|11|12|13|(14)|(15)|(16)|(17)|(18)|(19)
+ -->
 ## Required Libraries
 
 1. [DallasTemperature.h](url)
