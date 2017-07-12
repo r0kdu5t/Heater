@@ -14,7 +14,7 @@ static uint8_t ip[] = { 192, 168, 1, 35 }; // Use if DHCP disabled
 //IPAddress broker(192, 168, 31, 65);       // Address of the MQTT broker - "spunkmeyer.theatrix.priv"
 static uint8_t broker[] = { 192, 168, 31, 65 };
 // Topic base for all comms from this device.
-#define TOPICBASE "Home/Sleepy/"
+#define TOPICBASE "Home/Sneezy/"
 
 // Include the libraries we need
 #include <SPI.h>
@@ -113,7 +113,7 @@ void reconnect() {
   while (!mqttClient.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (mqttClient.connect("SleepyClient", (char *)TOPICBASE "State", 1, 0, "DEAD")) {
+    if (mqttClient.connect("SneezyClient", (char *)TOPICBASE "State", 1, 0, "DEAD")) {
       //if (mqttClient.connect("SleepyClient")) {
       Serial.println("connected");
       // Once connected, publish an announcement...
@@ -140,7 +140,7 @@ void reconnect() {
 void setup(void)
 {
   Serial.begin(9600); // start serial port
-  Wire.begin(); // Wake up I2C bus
+  
   //Serial.println("Dallas Temperature IC Control Library Demo");
   Serial.println( F("Heater.ino by <r0kdu5t@theatrix.org.nz>"));
 
@@ -190,6 +190,7 @@ void setup(void)
 
   if ( ENABLE_MAC_ADDRESS_ROM == true )
   {
+    Wire.begin(); // Wake up I2C bus
     Serial.print(F("Getting MAC address from ROM: "));
     mac[0] = readRegister(0xFA);
     mac[1] = readRegister(0xFB);
