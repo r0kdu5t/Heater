@@ -2,15 +2,17 @@
    Heater.ino
 */
 /*--------------------------- Configuration ------------------------------*/
-/* Network config */
+
+/*--------------------------- Network ------------------------------*/
 #define ENABLE_DHCP                 true   // true/false
 #define MAC_DS                      true   // true/false If use DS for MAC then make following false
 #define ENABLE_MAC_ADDRESS_ROM      false   // true/false
 #define MAC_I2C_ADDRESS             0x50   // Microchip 24AA125E48 I2C ROM address
-//
+
 static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };  // Set if no MAC ROM
 static uint8_t ip[] = { 192, 168, 1, 35 }; // Use if DHCP disabled
-/* MQTT config */
+
+/*--------------------------- MQTT ------------------------------*/
 //IPAddress broker(192, 168, 31, 65);       // Address of the MQTT broker - "spunkmeyer.theatrix.priv"
 static uint8_t broker[] = { 192, 168, 31, 65 };
 // Topic base for all comms from this device.
@@ -27,6 +29,12 @@ static uint8_t broker[] = { 192, 168, 31, 65 };
 #define ONE_WIRE_BUS 5  // Data wire is plugged into port 2 on the Arduino
 OneWire oneWire(ONE_WIRE_BUS);  // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
+/* Watchdog Timer Settings */
+#define ENABLE_EXTERNAL_WATCHDOG        true       // true / false
+#define WATCHDOG_PIN                    17         // Output to pat the watchdog
+#define WATCHDOG_PULSE_LENGTH           50         // Milliseconds
+#define WATCHDOG_RESET_INTERVAL         30000      // Milliseconds. Also the period for sensor reports.
+long watchdogLastResetTime = 0;
 
 /*--------------------------- Variables ------------------------------*/
 float tempValue;
