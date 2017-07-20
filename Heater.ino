@@ -2,6 +2,18 @@
    Heater.ino
 */
 /*--------------------------- Configuration ------------------------------*/
+//
+#define DEBUG_ON   // comment out to supress serial monitor output
+//
+#ifdef DEBUG_ON 
+#define DEBUG_PRINT(x)   Serial.print(x)
+#define DEBUG_PRINTLN(x) Serial.println(x)
+#define SERIAL_START(x)  Serial.begin(x)
+#else
+#define DEBUG_PRINT(x)
+#define DEBUG_PRINTLN(x)
+#define SERIAL_START(x)
+#endif
 /* Network config */
 #define ENABLE_DHCP                 true   // true/false
 #define MAC_DS                      true   // true/false If use DS for MAC then make following false
@@ -32,13 +44,15 @@ DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Te
 float tempValue;
 boolean REQ_HEAT = false; // REQUEST HEATING!
 boolean OVRDE = false;  // OVER_RIDE or MANUAL
-volatile boolean FLAG = false;
-unsigned long last_button_time = 0;
+volatile bool buttonPushed = false;
+//volatile boolean FLAG = false;
+//unsigned long last_button_time = 0;
 byte confSetTemp = 18;
 unsigned long confTempDelay = 10000;    // Default temperature publish delay.
 unsigned long LastTempMillis = 0;       // Stores the last millis() for determining update delay.
 # define HYSTERESIS 2
 # define SSR_PIN 6
+# define BUTTON_LED_PIN 7
 //bool SENT_SSR_STATUS = false;
 
 # define RED_PIN 15 // analogPin A1
@@ -79,15 +93,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
 EthernetClient ethClient;
 PubSubClient mqttClient( broker, 1883, callback, ethClient); // MQTT object
 
-// Interrupt Service Routine (ISR)
-void pButton() {
-  unsigned long button_time = millis();
+void PushButton() // Interrupt Service Routine (ISR) with debounce
+{
+  static unsigned long last_interrupt_time = 0;
+  unsigned long interrupt_time = millis();
   //check to see if increment() was called in the last 250 milliseconds
-  if (button_time - last_button_time > 250)
+  if (interrupt_time - last_interrupt_time > 250)
   {
-    FLAG = true;
-    last_button_time = button_time;
+    buttonPushed = true;
   }
+  last_interrupt_time = interrupt_time;
 }  // end of isr
 
 void ethernetFromDS() {
@@ -148,10 +163,11 @@ void reconnect() {
 */
 void setup(void)
 {
-  Serial.begin(9600); // start serial port
+  //Serial.begin(9600); // start serial port
+  SERIAL_START(9600);
 
-  //Serial.println("Dallas Temperature IC Control Library Demo");
-  Serial.println( F("Heater.ino by <r0kdu5t@theatrix.org.nz>"));
+  DEBUG_PRINTLN(F("Heater.ino by <r0kdu5t@theatrix.org.nz>"));
+  //Serial.println( F("Heater.ino by <r0kdu5t@theatrix.org.nz>"));
 
   // Info String in Flash
   Serial.print( F("Compiled: "));
@@ -166,11 +182,16 @@ void setup(void)
      Enable interrupt 0 which uses pin 2
      jump to the pButton function on rising edge
   */
-  attachInterrupt(digitalPinToInterrupt(2), pButton, RISING);
+  pinMode(2, INPUT);
+  attachInterrupt(digitalPinToInterrupt(2), PushButton, RISING);
 
   // Setup SSR control pin.
   pinMode(SSR_PIN, OUTPUT);
   digitalWrite(SSR_PIN, LOW); // Turn 'Off' SSR.
+
+  // Setup PushButton LED pin.
+  pinMode(BUTTON_LED_PIN, OUTPUT);
+  digitalWrite(BUTTON_LED_PIN, HIGH); // Turn 'Off' PushButton LED.
 
   // Setup the output status LEDs.
   byte i;
@@ -289,13 +310,16 @@ void loop(void)
   //digitalWrite(RED_PIN, LOW);
   //digitalWrite(GREEN_PIN, LOW);
   //digitalWrite(BLUE_PIN, LOW);
-  if (FLAG == true) {
+  if (buttonPushed == true)
+  {
     // interrupt has occurred
-    // REQ_HEAT = !REQ_HEAT
+    DEBUG_PRINTLN(F("Button Pressed"));
+    //REQ_HEAT = !REQ_HEAT;
     OVRDE = !OVRDE;
-    FLAG = false;
+    buttonPushed = false;
   }
-  if ( REQ_HEAT || OVRDE ) {
+  if ( REQ_HEAT || OVRDE )
+  {
     SSR_CTRL(true);
   }
   else {
@@ -314,30 +338,32 @@ void SSR_CTRL(boolean CTRL_STATE ) {
   {
     digitalWrite(SSR_PIN, HIGH);
     //Serial.println("SSR_CTRL: ON ");
+    digitalWrite(BUTTON_LED_PIN, LOW);
   }
   else
   {
     digitalWrite(SSR_PIN, LOW);
-    //Serial.println("SSR_CTRL: OFF "); 
+    //Serial.println("SSR_CTRL: OFF ");
+    digitalWrite(BUTTON_LED_PIN, HIGH);
   }
   /*
-  if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
+    if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
     digitalWrite(SSR_PIN, HIGH);
     Publish((char *)"SSR", (char *)"ON");
     Serial.println("SSR_CTRL: ON ");
     SENT_SSR_STATUS = true;
     //
-  }
-  else if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
+    }
+    else if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
     // Do nothing - No repeat MQTT Publish
-  }
-  else if ( HEAT_CTRL == false && SENT_SSR_STATUS == false) {
+    }
+    else if ( HEAT_CTRL == false && SENT_SSR_STATUS == false) {
     digitalWrite(SSR_PIN, LOW);
     Publish((char *)"SSR", (char *)"OFF");
     Serial.println("SSR_CTRL: OFF ");
     SENT_SSR_STATUS = false;
- }
- */
+    }
+  */
 }
 
 /*
