@@ -404,4 +404,35 @@ void PublishFloat(char *Topic, float Value)
   strcat(TopicBase, Topic);
   mqttClient.publish(TopicBase, Message);
 }
+/*
+//
+typedef enum {
+  ALL_OFF, HEAT_OFF, HEAT_ON, AUTO, FORCED
+}
+HeaterStates;
+//
+HeaterStates state = ALL_OFF;
+HeaterStates lastState;
 
+  // if (buttonPushed)
+  // {
+  //   DEBUG_PRINTLN(F("Button Pressed"));
+  //   if (state == ALL_OFF)
+  //   {
+  //     state = AUTO; // Allow tStat to turn on and off itself
+  //   }
+  //   else if (state == AUTO)
+  //   {
+  //     state = HEAT_ON; // Manually turn output 'On'
+  //   }
+  //   else if (state == HEAT_ON)
+  //   {
+  //     state = HEAT_OFF; // Manually turn output 'Off'
+  //   }    
+  //   else
+  //   {
+  //     state = ALL_OFF;
+  //   }
+  //   buttonPushed = false;
+  // }
+*/
