@@ -5,7 +5,7 @@
 //
 #define DEBUG_ON   // comment out to supress serial monitor output
 //
-#ifdef DEBUG_ON 
+#ifdef DEBUG_ON
 #define DEBUG_PRINT(x)   Serial.print(x)
 #define DEBUG_PRINTLN(x) Serial.println(x)
 #define SERIAL_START(x)  Serial.begin(x)
@@ -288,28 +288,31 @@ void loop(void)
     //Serial.print((int)temperature);
     PublishFloat((char *)"Temperature", tempValue); // Publish temperature value on topic
   }
-
   // Check if sensed value is less than set value minus HYSTERESIS
-  if ((int)tempValue < (confSetTemp - HYSTERESIS)) {
+  if ((int)tempValue < (confSetTemp - HYSTERESIS))
+  {
     // Turn On Output
     REQ_HEAT = true;
-    digitalWrite(RED_PIN, HIGH);
-  } else {
+    // COLD - blue
     digitalWrite(RED_PIN, LOW);
-  }
-  // Check if sensed value is more than set value plus HYSTERESIS
-  if ((int)tempValue > (confSetTemp + HYSTERESIS)) {
+    digitalWrite(GREEN_PIN, LOW);
+    digitalWrite(BLUE_PIN, HIGH);
+    // Check if sensed value is more than set value plus HYSTERESIS
+  } else if ((int)tempValue > (confSetTemp + HYSTERESIS))
+  {
     // Turn Off Output
     REQ_HEAT = false;
+    // TEMP OK - green
+    digitalWrite(RED_PIN, LOW);
     digitalWrite(GREEN_PIN, HIGH);
-  } else {
-    digitalWrite(GREEN_PIN, LOW);
+    digitalWrite(BLUE_PIN, LOW);
+  } else
+  {
+    // ISH - yellow
+    digitalWrite(RED_PIN, HIGH);
+    digitalWrite(GREEN_PIN, HIGH);
+    digitalWrite(BLUE_PIN, LOW);
   }
-  //digitalWrite(GREEN_PIN, HIGH);
-
-  //digitalWrite(RED_PIN, LOW);
-  //digitalWrite(GREEN_PIN, LOW);
-  //digitalWrite(BLUE_PIN, LOW);
   if (buttonPushed == true)
   {
     // interrupt has occurred
@@ -405,14 +408,14 @@ void PublishFloat(char *Topic, float Value)
   mqttClient.publish(TopicBase, Message);
 }
 /*
-//
-typedef enum {
+  //
+  typedef enum {
   ALL_OFF, HEAT_OFF, HEAT_ON, AUTO, FORCED
-}
-HeaterStates;
-//
-HeaterStates state = ALL_OFF;
-HeaterStates lastState;
+  }
+  HeaterStates;
+  //
+  HeaterStates state = ALL_OFF;
+  HeaterStates lastState;
 
   // if (buttonPushed)
   // {
@@ -428,7 +431,7 @@ HeaterStates lastState;
   //   else if (state == HEAT_ON)
   //   {
   //     state = HEAT_OFF; // Manually turn output 'Off'
-  //   }    
+  //   }
   //   else
   //   {
   //     state = ALL_OFF;
@@ -436,3 +439,26 @@ HeaterStates lastState;
   //   buttonPushed = false;
   // }
 */
+/*
+  Code example - RGB_LED - Temperature Indicator
+*/
+// if (tempC < 16) {
+//   //brrr cold -- blue
+//   digitalWrite(bluePin, HIGH);
+// } else if (tempC < 20) {
+//   // makes cyan when mixed with blue
+//   digitalWrite(greenPin, HIGH);
+// } else if (tempC < 24) {
+//   // turn off blue, so green colour, perfect temperature
+//   digitalWrite(bluePin, LOW);
+// } else if (tempC < 28) {
+//   // getting hot -- yellow
+//   digitalWrite(redPin, HIGH);
+// } else if (tempC < 31) {
+//   // pretty hot -- magenta
+//   digitalWrite(bluePin, HIGH);
+//   digitalWrite(greenPin, LOW);
+//   digitalWrite(redPin, HIGH);
+// } else { // it's burning HOOOOOT -- RED
+//   digitalWrite(bluePin, LOW);
+// }
