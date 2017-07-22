@@ -42,13 +42,12 @@ DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Te
 
 /*--------------------------- Variables ------------------------------*/
 float tempValue;
-// boolean REQ_HEAT = false; // REQUEST HEATING!
 boolean OVRDE = false;  // OVER_RIDE or MANUAL
 typedef enum {
-  ALL_OFF, HEAT_OFF, HEAT_ON, AUTO, FORCED
+  HEAT_OFF, HEAT_ON, OVER_RIDE
 } HeaterStates;
 //
-HeaterStates state = ALL_OFF;
+HeaterStates state = HEAT_OFF;
 HeaterStates lastState;
 volatile bool buttonPushed = false;
 //volatile boolean FLAG = false;
@@ -74,16 +73,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
     if (strstr(topic, "setTemp")) {
       confSetTemp = atoi((const char *)payload);
       //
-      Serial.print("Set temperature is now: ");
-      //Serial.println(confSetTemp, DEC);
-      Serial.println(confSetTemp);
+      DEBUG_PRINT("Set temperature is now: ");
+      //DEBUG_PRINTLN(confSetTemp, DEC);
+      DEBUG_PRINTLN(confSetTemp);
     }
     else if (strstr(topic, "TempDelay")) {
       confTempDelay = atoi((const char *)payload);
-      Serial.print("Temperature send delay is now ");
-      //Serial.println(confSetTemp, DEC);
-      Serial.print(confTempDelay);
-      Serial.println(" milliSeconds.");
+      DEBUG_PRINT("Temperature send delay is now ");
+      //DEBUG_PRINTLN(confSetTemp, DEC);
+      DEBUG_PRINT(confTempDelay);
+      DEBUG_PRINTLN(" milliSeconds.");
     }
 
     /*else if (strstr(topic, "CheckDelay"))
@@ -116,14 +115,14 @@ void ethernetFromDS() {
   byte dsAddress[8];
   delay( 500 );
 
-  Serial.print ("Searching for DS18B20...");
+  DEBUG_PRINT ("Searching for DS18B20...");
   oneWire.reset_search();
   if ( !oneWire.search(dsAddress) )
   {
-    Serial.println("none found. Using specified MAC Address.");
+    DEBUG_PRINTLN("none found. Using specified MAC Address.");
   }
   else {
-    Serial.print( "Success! \nSetting MAC address...." );
+    DEBUG_PRINT( "Success! \nSetting MAC address...." );
     mac[1] = dsAddress[3];
     mac[2] = dsAddress[4];
     mac[3] = dsAddress[5];
@@ -135,11 +134,11 @@ void ethernetFromDS() {
 void reconnect() {
   // Loop until we're reconnected
   while (!mqttClient.connected()) {
-    Serial.print("Attempting MQTT connection...");
+    DEBUG_PRINT("Attempting MQTT connection...");
     // Attempt to connect
     if (mqttClient.connect("SneezyClient", (char *)TOPICBASE "State", 1, 0, "DEAD")) {
       //if (mqttClient.connect("SleepyClient")) {
-      Serial.println("connected");
+      DEBUG_PRINTLN("connected");
       // Once connected, publish an announcement...
       Publish((char *)"State", (char *)"BOOTUP");
       // ... and resubscribe
@@ -147,9 +146,9 @@ void reconnect() {
       mqttClient.subscribe(TOPICBASE "Config/#");  // Allow bootup config fetching using MQTT persist flag!
       //mqttClient.subscribe(TOPICBASE "Put/#");     // Send commands to this device, use Home/<device_name>/Get/# for responses.
     } else {
-      Serial.print("failed, rc=");
-      Serial.print(mqttClient.state());
-      Serial.println(" try again in 5 seconds");
+      DEBUG_PRINT("failed, rc=");
+      DEBUG_PRINT(mqttClient.state());
+      DEBUG_PRINTLN(" try again in 5 seconds");
       // Wait 5 seconds before retrying
       digitalWrite(BLUE_PIN, HIGH);
       delay(5000);
@@ -208,7 +207,7 @@ void setup(void)
   //Start Ethernet using mac formed from DS
   if ( MAC_DS == true )
   {
-    Serial.println(F("Getting MAC address from DS: "));
+    DEBUG_PRINTLN(F("Getting MAC address from DS: "));
     ethernetFromDS();
   }
 
@@ -238,7 +237,7 @@ void setup(void)
   // Print the IP address
   char tmpBuf[17];
   sprintf(tmpBuf, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-  Serial.println(tmpBuf);
+  DEBUG_PRINTLN(tmpBuf);
 
   // setup the Ethernet library to talk to the Wiznet board
   if ( ENABLE_DHCP == true )
@@ -258,7 +257,7 @@ void setup(void)
       Serial.print(".");
     }
   }
-  Serial.println();
+  DEBUG_PRINTLN();
   // Start up the library
   sensors.begin();
 }
@@ -272,23 +271,16 @@ void loop(void)
     reconnect();
   }
   mqttClient.loop();
-  // call sensors.requestTemperatures() to issue a global temperature
-  // request to all devices on the bus
-  //Serial.print("Requesting temperatures...");
+
   sensors.requestTemperatures(); // Send the command to get temperatures
-  //Serial.println("DONE");
-  // After we got the temperatures, we can print them here.
-  // We use the function ByIndex, and as an example get the temperature from the first sensor only.
-  // Serial.print("Temperature for the device 1 (index 0) is: ");
-  // Serial.println(tempValue, DEC);
-  //Serial.println(sensors.getTempCByIndex(0));
+ 
   tempValue = sensors.getTempCByIndex(0); // Get value from sensor
 
   if (confTempDelay && (millis() - LastTempMillis > confTempDelay))
   {
     LastTempMillis = millis();
-    Serial.print("Temperature for the device 1 (index 0) is: ");
-    Serial.println(tempValue, DEC);
+    DEBUG_PRINT("Temperature for the device 1 (index 0) is: ");
+    DEBUG_PRINTLN(tempValue);
     //Serial.print((int)temperature);
     PublishFloat((char *)"Temperature", tempValue); // Publish temperature value on topic
   }
@@ -297,7 +289,6 @@ void loop(void)
   {
     // Turn On Output
     state = HEAT_ON;
-    //REQ_HEAT = true;
     // COLD - blue
     digitalWrite(RED_PIN, LOW);
     digitalWrite(GREEN_PIN, LOW);
@@ -307,7 +298,6 @@ void loop(void)
   {
     // Turn Off Output
     state = HEAT_OFF;
-    //REQ_HEAT = false;
     // TEMP OK - green
     digitalWrite(RED_PIN, LOW);
     digitalWrite(GREEN_PIN, HIGH);
@@ -316,27 +306,32 @@ void loop(void)
   {
     // ISH - yellow
     //slowToggleLED(RED_PIN);
-    //digitalWrite(RED_PIN, HIGH);
-    //digitalWrite(GREEN_PIN, HIGH);
+    digitalWrite(RED_PIN, LOW);
+    digitalWrite(GREEN_PIN, LOW);
     digitalWrite(BLUE_PIN, LOW);
   }
   if (buttonPushed == true)
   {
     // interrupt has occurred
     DEBUG_PRINTLN(F("Button Pressed"));
-    //REQ_HEAT = !REQ_HEAT;
     OVRDE = !OVRDE;
     if (state == HEAT_OFF)
     {
       state = HEAT_ON;
+      digitalWrite(RED_PIN, HIGH);
+      digitalWrite(GREEN_PIN, LOW);
+      digitalWrite(BLUE_PIN, LOW);
     } else if (state == HEAT_ON)
     {
       state = HEAT_OFF;
+      digitalWrite(RED_PIN, LOW);
+      digitalWrite(GREEN_PIN, LOW);
+      digitalWrite(BLUE_PIN, LOW);
     }
     buttonPushed = false;
   }
 
-  // ALL_OFF, HEAT_OFF, HEAT_ON, AUTO, FORCED
+  // HEAT_OFF, HEAT_ON, OVER_RIDE
   if (state != lastState)
   {
     DEBUG_PRINT(F("state is: "));
@@ -345,29 +340,17 @@ void loop(void)
     DEBUG_PRINTLN(lastState);
   }
 
-  if (state == FORCED)
+  if (state == OVER_RIDE)
   {
     //slowToggleLED();
     OVRDE = true;
     fastToggleLED(BUTTON_LED_PIN);
   }
   //
-  else if (state == AUTO)
-  {
-    OVRDE = false;
-    /*
-      if ( REQ_HEAT == true ) {
-      state = HEAT_ON;
-      }
-      else {
-      state = HEAT_OFF;
-      } */
-  }
-  //
   else if (state == HEAT_ON)
   {
     //fastToggleLed();
-    fastToggleLED(BUTTON_LED_PIN);
+    slowToggleLED(BUTTON_LED_PIN);
     if (digitalRead(SSR_PIN) == LOW) {
       //state = digitalRead(13);
       //digitalWrite(SSR_PIN, HIGH);
@@ -387,16 +370,12 @@ void loop(void)
       //
     }
     digitalWrite(SSR_PIN, LOW);
+    digitalWrite(BUTTON_LED_PIN, HIGH); // Turn 'Off' PushButton LED
   }
-  else if (state == ALL_OFF)
-  {
-    // Do Stuff
-  }
-
   lastState = state;
-
   //delay(1000);
 } // End of loop()
+
 /*
    fastToggleLed : check mysensors.org - modified
 */
