@@ -215,13 +215,13 @@ void setup(void)
   /*
      DEBUG - Stuff
   */
-/*  // What are my variable values
-  Serial.println();
-  Serial.println(confSetTemp, DEC);
-  Serial.println(HYSTERESIS, DEC);
-  Serial.println();
-  //delay(2000);
-*/
+  /*  // What are my variable values
+    Serial.println();
+    Serial.println(confSetTemp, DEC);
+    Serial.println(HYSTERESIS, DEC);
+    Serial.println();
+    //delay(2000);
+  */
   if ( ENABLE_MAC_ADDRESS_ROM == true )
   {
     Wire.begin(); // Wake up I2C bus
@@ -296,7 +296,8 @@ void loop(void)
   if ((int)tempValue < (confSetTemp - HYSTERESIS))
   {
     // Turn On Output
-    REQ_HEAT = true;
+    state = HEAT_ON;
+    //REQ_HEAT = true;
     // COLD - blue
     digitalWrite(RED_PIN, LOW);
     digitalWrite(GREEN_PIN, LOW);
@@ -305,7 +306,8 @@ void loop(void)
   } else if ((int)tempValue > (confSetTemp + HYSTERESIS))
   {
     // Turn Off Output
-    REQ_HEAT = false;
+    state = HEAT_OFF;
+    //REQ_HEAT = false;
     // TEMP OK - green
     digitalWrite(RED_PIN, LOW);
     digitalWrite(GREEN_PIN, HIGH);
@@ -324,18 +326,25 @@ void loop(void)
     DEBUG_PRINTLN(F("Button Pressed"));
     REQ_HEAT = !REQ_HEAT;
     OVRDE = !OVRDE;
+    if (state == HEAT_OFF)
+    {
+      state = HEAT_ON;
+    } else if (state == HEAT_ON)
+    {
+      state = HEAT_OFF;
+    }
     buttonPushed = false;
   }
-  /*
-    if ( REQ_HEAT || OVRDE )
-    {
-      SSR_CTRL(true);
-    }
-    else {
-      SSR_CTRL(false);
-    }
-  */
+
   // ALL_OFF, HEAT_OFF, HEAT_ON, AUTO, FORCED
+  if (state != lastState)
+  {
+    DEBUG_PRINT(F("state is: "));
+    DEBUG_PRINT(state);
+    DEBUG_PRINT(F(" lastState is: "));
+    DEBUG_PRINTLN(lastState);
+  }
+
   if (state == FORCED)
   {
     //slowToggleLED();
@@ -346,43 +355,45 @@ void loop(void)
   else if (state == AUTO)
   {
     OVRDE = false;
-    if ( REQ_HEAT == true ) {
+    /*
+      if ( REQ_HEAT == true ) {
       state = HEAT_ON;
-    }
-    else {
+      }
+      else {
       state = HEAT_OFF;
-    }
+      } */
   }
   //
   else if (state == HEAT_ON)
   {
     //fastToggleLed();
-    if (state != lastState) {
-      digitalWrite(SSR_PIN, HIGH);
+    fastToggleLED(BUTTON_LED_PIN);
+    if (digitalRead(SSR_PIN) == LOW) {
+      //state = digitalRead(13);
+      //digitalWrite(SSR_PIN, HIGH);
       Publish((char *)"SSR", (char *)"ON");
       DEBUG_PRINTLN(F("SSR_CTRL: ON "));
       //
     }
-    // Do Stuff
+    digitalWrite(SSR_PIN, HIGH);
   }
   else if (state == HEAT_OFF)
   {
     // Do Stuff
-    if (state != lastState) {
-      digitalWrite(SSR_PIN, LOW);
+    if (digitalRead(SSR_PIN) == HIGH) {
+      //digitalWrite(SSR_PIN, LOW);
       Publish((char *)"SSR", (char *)"OFF");
       DEBUG_PRINTLN(F("SSR_CTRL: OFF"));
       //
-    }  
+    }
+    digitalWrite(SSR_PIN, LOW);
   }
   else if (state == ALL_OFF)
   {
     // Do Stuff
   }
-  else
-  {
-    lastState = state;
-  }
+
+  lastState = state;
 
   //delay(1000);
 } // End of loop()
@@ -413,39 +424,39 @@ void slowToggleLED(byte ledPin)
 /*
    SSR control routine.
 */
- /*void SSR_CTRL(boolean CTRL_STATE ) {
+/*void SSR_CTRL(boolean CTRL_STATE ) {
   static bool SENT_STATUS = false;
   if ( CTRL_STATE == true )
   {
-    digitalWrite(SSR_PIN, HIGH);
-    //Serial.println("SSR_CTRL: ON ");
-    digitalWrite(BUTTON_LED_PIN, LOW);
+   digitalWrite(SSR_PIN, HIGH);
+   //Serial.println("SSR_CTRL: ON ");
+   digitalWrite(BUTTON_LED_PIN, LOW);
   }
   else
   {
-    digitalWrite(SSR_PIN, LOW);
-    //Serial.println("SSR_CTRL: OFF ");
-    digitalWrite(BUTTON_LED_PIN, HIGH);
+   digitalWrite(SSR_PIN, LOW);
+   //Serial.println("SSR_CTRL: OFF ");
+   digitalWrite(BUTTON_LED_PIN, HIGH);
   }
-  
-    if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
-    digitalWrite(SSR_PIN, HIGH);
-    Publish((char *)"SSR", (char *)"ON");
-    Serial.println("SSR_CTRL: ON ");
-    SENT_SSR_STATUS = true;
-    //
-    }
-    else if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
-    // Do nothing - No repeat MQTT Publish
-    }
-    else if ( HEAT_CTRL == false && SENT_SSR_STATUS == false) {
-    digitalWrite(SSR_PIN, LOW);
-    Publish((char *)"SSR", (char *)"OFF");
-    Serial.println("SSR_CTRL: OFF ");
-    SENT_SSR_STATUS = false;
-    }
-  
-} */
+
+   if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
+   digitalWrite(SSR_PIN, HIGH);
+   Publish((char *)"SSR", (char *)"ON");
+   Serial.println("SSR_CTRL: ON ");
+   SENT_SSR_STATUS = true;
+   //
+   }
+   else if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
+   // Do nothing - No repeat MQTT Publish
+   }
+   else if ( HEAT_CTRL == false && SENT_SSR_STATUS == false) {
+   digitalWrite(SSR_PIN, LOW);
+   Publish((char *)"SSR", (char *)"OFF");
+   Serial.println("SSR_CTRL: OFF ");
+   SENT_SSR_STATUS = false;
+   }
+
+  } */
 #ifdef ENABLE_MAC_ADDRESS_ROM
 /*
    Required to read the MAC address ROM
