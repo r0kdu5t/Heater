@@ -313,7 +313,7 @@ void loop(void)
   } else
   {
     // ISH - yellow
-    slowToggleLED();
+    slowToggleLED(RED_PIN);
     //digitalWrite(RED_PIN, HIGH);
     //digitalWrite(GREEN_PIN, HIGH);
     digitalWrite(BLUE_PIN, LOW);
@@ -326,26 +326,68 @@ void loop(void)
     OVRDE = !OVRDE;
     buttonPushed = false;
   }
-  if ( REQ_HEAT || OVRDE )
+  /*
+    if ( REQ_HEAT || OVRDE )
+    {
+      SSR_CTRL(true);
+    }
+    else {
+      SSR_CTRL(false);
+    }
+  */
+  // ALL_OFF, HEAT_OFF, HEAT_ON, AUTO, FORCED
+  if (state == FORCED)
   {
-    SSR_CTRL(true);
+    //slowToggleLED ();
+    // Do Stuff
   }
-  else {
-    SSR_CTRL(false);
+  //
+  else if (state == AUTO)
+  {
+    // Do Stuff
+  }
+  //
+  else if (state == HEAT_ON)
+  {
+    //fastToggleLed();
+    // Do Stuff
+  }
+  else if (state == HEAT_OFF)
+  {
+    // Do Stuff
+  }
+  else if (state == ALL_OFF)
+  {
+    // Do Stuff
+  }
+  else
+  {
+    lastState = state;
   }
 
   //delay(1000);
 } // End of loop()
-
-void slowToggleLED()
+/*
+ * fastToggleLed : check mysensors.org - modified
+ */
+void fastToggleLED(byte ledPin)
+{
+  static unsigned long fastLedTimer;
+  if (millis() - fastLedTimer >= 100UL)
+  {
+    digitalWrite(ledPin, !digitalRead(ledPin));
+    fastLedTimer = millis ();
+  }
+}
+/*
+ * slowToggleLED : check mysensors.org - modified
+ */
+void slowToggleLED(byte ledPin)
 {
   static unsigned long slowLedTimer;
   if (millis() - slowLedTimer >= 1250UL)
   {
-    //digitalWrite(ledPin, !digitalRead(ledPin));
-    // Added this to get colour on RGB LED
-    digitalWrite(RED_PIN, !digitalRead(RED_PIN));
-    digitalWrite(GREEN_PIN, !digitalRead(GREEN_PIN));
+    digitalWrite(ledPin, !digitalRead(ledPin));
     slowLedTimer = millis ();
   }
 }
@@ -457,26 +499,4 @@ void PublishFloat(char *Topic, float Value)
   //   buttonPushed = false;
   // }
 */
-/*
-  Code example - RGB_LED - Temperature Indicator
-*/
-// if (tempC < 16) {
-//   //brrr cold -- blue
-//   digitalWrite(bluePin, HIGH);
-// } else if (tempC < 20) {
-//   // makes cyan when mixed with blue
-//   digitalWrite(greenPin, HIGH);
-// } else if (tempC < 24) {
-//   // turn off blue, so green colour, perfect temperature
-//   digitalWrite(bluePin, LOW);
-// } else if (tempC < 28) {
-//   // getting hot -- yellow
-//   digitalWrite(redPin, HIGH);
-// } else if (tempC < 31) {
-//   // pretty hot -- magenta
-//   digitalWrite(bluePin, HIGH);
-//   digitalWrite(greenPin, LOW);
-//   digitalWrite(redPin, HIGH);
-// } else { // it's burning HOOOOOT -- RED
-//   digitalWrite(bluePin, LOW);
-// }
+
