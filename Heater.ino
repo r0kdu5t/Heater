@@ -42,7 +42,7 @@ DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Te
 
 /*--------------------------- Variables ------------------------------*/
 float tempValue;
-boolean REQ_HEAT = false; // REQUEST HEATING!
+// boolean REQ_HEAT = false; // REQUEST HEATING!
 boolean OVRDE = false;  // OVER_RIDE or MANUAL
 typedef enum {
   ALL_OFF, HEAT_OFF, HEAT_ON, AUTO, FORCED
@@ -324,7 +324,7 @@ void loop(void)
   {
     // interrupt has occurred
     DEBUG_PRINTLN(F("Button Pressed"));
-    REQ_HEAT = !REQ_HEAT;
+    //REQ_HEAT = !REQ_HEAT;
     OVRDE = !OVRDE;
     if (state == HEAT_OFF)
     {
