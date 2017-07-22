@@ -315,7 +315,7 @@ void loop(void)
   } else
   {
     // ISH - yellow
-    slowToggleLED(RED_PIN);
+    //slowToggleLED(RED_PIN);
     //digitalWrite(RED_PIN, HIGH);
     //digitalWrite(GREEN_PIN, HIGH);
     digitalWrite(BLUE_PIN, LOW);
