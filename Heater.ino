@@ -42,7 +42,7 @@ DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Te
 
 /*--------------------------- Variables ------------------------------*/
 float tempValue;
-boolean OVRDE = false;  // OVER_RIDE or MANUAL
+bool OVRDE = false;  // OVER_RIDE or MANUAL
 typedef enum {
   HEAT_OFF, HEAT_ON, OVER_RIDE
 } HeaterStates;
@@ -273,7 +273,7 @@ void loop(void)
   mqttClient.loop();
 
   sensors.requestTemperatures(); // Send the command to get temperatures
- 
+
   tempValue = sensors.getTempCByIndex(0); // Get value from sensor
 
   if (confTempDelay && (millis() - LastTempMillis > confTempDelay))
@@ -294,7 +294,8 @@ void loop(void)
     digitalWrite(GREEN_PIN, LOW);
     digitalWrite(BLUE_PIN, HIGH);
     // Check if sensed value is more than set value plus HYSTERESIS
-  } else if ((int)tempValue > (confSetTemp + HYSTERESIS))
+  }
+  else if ((int)tempValue > (confSetTemp + HYSTERESIS))
   {
     // Turn Off Output
     state = HEAT_OFF;
@@ -302,31 +303,41 @@ void loop(void)
     digitalWrite(RED_PIN, LOW);
     digitalWrite(GREEN_PIN, HIGH);
     digitalWrite(BLUE_PIN, LOW);
-  } else
+  }
+/*  
+  else
   {
     // ISH - yellow
     //slowToggleLED(RED_PIN);
     digitalWrite(RED_PIN, LOW);
     digitalWrite(GREEN_PIN, LOW);
     digitalWrite(BLUE_PIN, LOW);
-  }
+    }
+*/
   if (buttonPushed == true)
   {
     // interrupt has occurred
     DEBUG_PRINTLN(F("Button Pressed"));
-    OVRDE = !OVRDE;
-    if (state == HEAT_OFF)
+    //
+    if ((state == HEAT_OFF) || (state == HEAT_ON))
     {
-      state = HEAT_ON;
+      state = OVER_RIDE;
+      /*
       digitalWrite(RED_PIN, HIGH);
       digitalWrite(GREEN_PIN, LOW);
       digitalWrite(BLUE_PIN, LOW);
-    } else if (state == HEAT_ON)
+      */
+      OVRDE = true;
+    }
+    else if ((state == OVER_RIDE) || (state == HEAT_ON))
     {
       state = HEAT_OFF;
+      /*
       digitalWrite(RED_PIN, LOW);
       digitalWrite(GREEN_PIN, LOW);
       digitalWrite(BLUE_PIN, LOW);
+      */
+      OVRDE = false;
     }
     buttonPushed = false;
   }
@@ -338,19 +349,22 @@ void loop(void)
     DEBUG_PRINT(state);
     DEBUG_PRINT(F(" lastState is: "));
     DEBUG_PRINTLN(lastState);
+    DEBUG_PRINT(F(" OVRDE is: "));
+    DEBUG_PRINTLN(OVRDE);    
   }
 
   if (state == OVER_RIDE)
   {
-    //slowToggleLED();
-    OVRDE = true;
-    fastToggleLED(BUTTON_LED_PIN);
+    slowToggleLED(BUTTON_LED_PIN);
+    //OVRDE = true;
+    state = HEAT_ON;
+    //fastToggleLED(BUTTON_LED_PIN);
   }
   //
   else if (state == HEAT_ON)
   {
     //fastToggleLed();
-    slowToggleLED(BUTTON_LED_PIN);
+    //slowToggleLED(BUTTON_LED_PIN);
     if (digitalRead(SSR_PIN) == LOW) {
       //state = digitalRead(13);
       //digitalWrite(SSR_PIN, HIGH);
