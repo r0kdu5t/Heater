@@ -313,8 +313,9 @@ void loop(void)
   } else
   {
     // ISH - yellow
-    digitalWrite(RED_PIN, HIGH);
-    digitalWrite(GREEN_PIN, HIGH);
+    slowToggleLED();
+    //digitalWrite(RED_PIN, HIGH);
+    //digitalWrite(GREEN_PIN, HIGH);
     digitalWrite(BLUE_PIN, LOW);
   }
   if (buttonPushed == true)
@@ -336,6 +337,18 @@ void loop(void)
   //delay(1000);
 } // End of loop()
 
+void slowToggleLED()
+{
+  static unsigned long slowLedTimer;
+  if (millis() - slowLedTimer >= 1250UL)
+  {
+    //digitalWrite(ledPin, !digitalRead(ledPin));
+    // Added this to get colour on RGB LED
+    digitalWrite(RED_PIN, !digitalRead(RED_PIN));
+    digitalWrite(GREEN_PIN, !digitalRead(GREEN_PIN));
+    slowLedTimer = millis ();
+  }
+}
 /*
    SSR control routine.
 */
