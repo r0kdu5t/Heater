@@ -42,7 +42,7 @@ DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Te
 
 /*--------------------------- Variables ------------------------------*/
 float tempValue;
-bool OVRDE = false;  // OVER_RIDE or MANUAL
+bool override = false;  // OVER_RIDE or MANUAL
 typedef enum {
   HEAT_OFF, HEAT_ON, OVER_RIDE
 } HeaterStates;
@@ -319,7 +319,7 @@ void loop(void)
     // interrupt has occurred
     DEBUG_PRINTLN(F("Button Pressed"));
     //
-    if ((state == HEAT_OFF) || (state == HEAT_ON))
+    if (state == HEAT_OFF)
     {
       state = OVER_RIDE;
       /*
@@ -327,9 +327,9 @@ void loop(void)
       digitalWrite(GREEN_PIN, LOW);
       digitalWrite(BLUE_PIN, LOW);
       */
-      OVRDE = true;
+      override = true;
     }
-    else if ((state == OVER_RIDE) || (state == HEAT_ON))
+    else if (state == OVER_RIDE || state == HEAT_ON)
     {
       state = HEAT_OFF;
       /*
@@ -337,7 +337,7 @@ void loop(void)
       digitalWrite(GREEN_PIN, LOW);
       digitalWrite(BLUE_PIN, LOW);
       */
-      OVRDE = false;
+      override = false;
     }
     buttonPushed = false;
   }
@@ -349,14 +349,14 @@ void loop(void)
     DEBUG_PRINT(state);
     DEBUG_PRINT(F(" lastState is: "));
     DEBUG_PRINTLN(lastState);
-    DEBUG_PRINT(F(" OVRDE is: "));
-    DEBUG_PRINTLN(OVRDE);    
+    DEBUG_PRINT(F(" override is: "));
+    DEBUG_PRINTLN(override);    
   }
 
   if (state == OVER_RIDE)
   {
-    slowToggleLED(BUTTON_LED_PIN);
-    //OVRDE = true;
+    //slowToggleLED(BUTTON_LED_PIN);
+    //override = true;
     state = HEAT_ON;
     //fastToggleLED(BUTTON_LED_PIN);
   }
@@ -364,6 +364,7 @@ void loop(void)
   else if (state == HEAT_ON)
   {
     //fastToggleLed();
+    if (override==true) {slowToggleLED(BUTTON_LED_PIN);}
     //slowToggleLED(BUTTON_LED_PIN);
     if (digitalRead(SSR_PIN) == LOW) {
       //state = digitalRead(13);
