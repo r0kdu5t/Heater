@@ -215,13 +215,13 @@ void setup(void)
   /*
      DEBUG - Stuff
   */
-  // What are my variable values
+/*  // What are my variable values
   Serial.println();
   Serial.println(confSetTemp, DEC);
   Serial.println(HYSTERESIS, DEC);
   Serial.println();
   //delay(2000);
-
+*/
   if ( ENABLE_MAC_ADDRESS_ROM == true )
   {
     Wire.begin(); // Wake up I2C bus
@@ -322,7 +322,7 @@ void loop(void)
   {
     // interrupt has occurred
     DEBUG_PRINTLN(F("Button Pressed"));
-    //REQ_HEAT = !REQ_HEAT;
+    REQ_HEAT = !REQ_HEAT;
     OVRDE = !OVRDE;
     buttonPushed = false;
   }
@@ -338,23 +338,42 @@ void loop(void)
   // ALL_OFF, HEAT_OFF, HEAT_ON, AUTO, FORCED
   if (state == FORCED)
   {
-    //slowToggleLED ();
-    // Do Stuff
+    //slowToggleLED();
+    OVRDE = true;
+    fastToggleLED(BUTTON_LED_PIN);
   }
   //
   else if (state == AUTO)
   {
-    // Do Stuff
+    OVRDE = false;
+    if ( REQ_HEAT == true ) {
+      state = HEAT_ON;
+    }
+    else {
+      state = HEAT_OFF;
+    }
   }
   //
   else if (state == HEAT_ON)
   {
     //fastToggleLed();
+    if (state != lastState) {
+      digitalWrite(SSR_PIN, HIGH);
+      Publish((char *)"SSR", (char *)"ON");
+      DEBUG_PRINTLN(F("SSR_CTRL: ON "));
+      //
+    }
     // Do Stuff
   }
   else if (state == HEAT_OFF)
   {
     // Do Stuff
+    if (state != lastState) {
+      digitalWrite(SSR_PIN, LOW);
+      Publish((char *)"SSR", (char *)"OFF");
+      DEBUG_PRINTLN(F("SSR_CTRL: OFF"));
+      //
+    }  
   }
   else if (state == ALL_OFF)
   {
@@ -368,8 +387,8 @@ void loop(void)
   //delay(1000);
 } // End of loop()
 /*
- * fastToggleLed : check mysensors.org - modified
- */
+   fastToggleLed : check mysensors.org - modified
+*/
 void fastToggleLED(byte ledPin)
 {
   static unsigned long fastLedTimer;
@@ -380,8 +399,8 @@ void fastToggleLED(byte ledPin)
   }
 }
 /*
- * slowToggleLED : check mysensors.org - modified
- */
+   slowToggleLED : check mysensors.org - modified
+*/
 void slowToggleLED(byte ledPin)
 {
   static unsigned long slowLedTimer;
@@ -394,7 +413,7 @@ void slowToggleLED(byte ledPin)
 /*
    SSR control routine.
 */
-void SSR_CTRL(boolean CTRL_STATE ) {
+ /*void SSR_CTRL(boolean CTRL_STATE ) {
   static bool SENT_STATUS = false;
   if ( CTRL_STATE == true )
   {
@@ -408,7 +427,7 @@ void SSR_CTRL(boolean CTRL_STATE ) {
     //Serial.println("SSR_CTRL: OFF ");
     digitalWrite(BUTTON_LED_PIN, HIGH);
   }
-  /*
+  
     if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
     digitalWrite(SSR_PIN, HIGH);
     Publish((char *)"SSR", (char *)"ON");
@@ -425,8 +444,8 @@ void SSR_CTRL(boolean CTRL_STATE ) {
     Serial.println("SSR_CTRL: OFF ");
     SENT_SSR_STATUS = false;
     }
-  */
-}
+  
+} */
 #ifdef ENABLE_MAC_ADDRESS_ROM
 /*
    Required to read the MAC address ROM
