@@ -111,19 +111,13 @@ void ethernetFromDS() {
   delay( 500 );
 
   Serial.print ("Searching for DS18B20...");
-
   oneWire.reset_search();
-
   if ( !oneWire.search(dsAddress) )
   {
-
     Serial.println("none found. Using specified MAC Address.");
-
   }
   else {
-
     Serial.print( "Success! \nSetting MAC address...." );
-
     mac[1] = dsAddress[3];
     mac[2] = dsAddress[4];
     mac[3] = dsAddress[5];
@@ -200,6 +194,10 @@ void setup(void)
     //sensors[sensorId].status_output
     digitalWrite(i, LOW); // Turn 'Off' LED.
   }
+  
+  // Setup PushButton PWR pin work-a-round
+  pinMode(19, OUTPUT);    // pin 19 = A5
+  digitalWrite(19, HIGH); // Turn 'On' PushButton PWR.
 
   //Start Ethernet using mac formed from DS
   if ( MAC_DS == true )
@@ -243,7 +241,7 @@ void setup(void)
   } else {
     Ethernet.begin(mac, ip);  // Use static address defined above
   }
-
+  delay(2000); // Delay 2 seconds - allow Ethernet to come up,
   // Print IP address:
   Serial.print(F("My IP: http://"));
   for (byte thisByte = 0; thisByte < 4; thisByte++) {
@@ -368,7 +366,7 @@ void SSR_CTRL(boolean CTRL_STATE ) {
     }
   */
 }
-
+#ifdef ENABLE_MAC_ADDRESS_ROM
 /*
    Required to read the MAC address ROM
 */
@@ -387,6 +385,7 @@ byte readRegister(byte r)
   v = Wire.read();
   return v;
 }
+#endif // ENABLE_MAC_ADDRESS_ROM
 
 void Publish(char *Topic, char *Message)
 {
