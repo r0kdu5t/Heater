@@ -44,6 +44,12 @@ DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Te
 float tempValue;
 boolean REQ_HEAT = false; // REQUEST HEATING!
 boolean OVRDE = false;  // OVER_RIDE or MANUAL
+typedef enum {
+  ALL_OFF, HEAT_OFF, HEAT_ON, AUTO, FORCED
+} HeaterStates;
+//
+HeaterStates state = ALL_OFF;
+HeaterStates lastState;
 volatile bool buttonPushed = false;
 //volatile boolean FLAG = false;
 //unsigned long last_button_time = 0;
@@ -194,7 +200,7 @@ void setup(void)
     //sensors[sensorId].status_output
     digitalWrite(i, LOW); // Turn 'Off' LED.
   }
-  
+
   // Setup PushButton PWR pin work-a-round
   pinMode(19, OUTPUT);    // pin 19 = A5
   digitalWrite(19, HIGH); // Turn 'On' PushButton PWR.
@@ -214,7 +220,7 @@ void setup(void)
   Serial.println(confSetTemp, DEC);
   Serial.println(HYSTERESIS, DEC);
   Serial.println();
-  delay(2000);
+  //delay(2000);
 
   if ( ENABLE_MAC_ADDRESS_ROM == true )
   {
