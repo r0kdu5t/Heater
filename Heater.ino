@@ -23,8 +23,8 @@
 static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };  // Set if no MAC ROM
 static uint8_t ip[] = { 192, 168, 1, 35 }; // Use if DHCP disabled
 /* MQTT config */
-//IPAddress broker(192, 168, 31, 65);       // Address of the MQTT broker - "spunkmeyer.theatrix.priv"
-static uint8_t broker[] = { 192, 168, 31, 65 };
+//IPAddress broker(192, 168, 62, 65);       // Address of the MQTT broker - "spunkmeyer.theatrix.priv"
+static uint8_t broker[] = { 192, 168, 62, 65 };
 // Topic base for all comms from this device.
 #define TOPICBASE "Home/Sneezy/"
 
