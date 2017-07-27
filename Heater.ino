@@ -73,13 +73,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
     if (strstr(topic, "setTemp")) {
       confSetTemp = atoi((const char *)payload);
       //
-      DEBUG_PRINT("Set temperature is now: ");
+      DEBUG_PRINT(F("Set temperature is now: "));
       //DEBUG_PRINTLN(confSetTemp, DEC);
       DEBUG_PRINTLN(confSetTemp);
     }
     else if (strstr(topic, "TempDelay")) {
       confTempDelay = atoi((const char *)payload);
-      DEBUG_PRINT("Temperature send delay is now ");
+      DEBUG_PRINT(F("Temperature send delay is now "));
       //DEBUG_PRINTLN(confSetTemp, DEC);
       DEBUG_PRINT(confTempDelay);
       DEBUG_PRINTLN(" milliSeconds.");
@@ -279,7 +279,7 @@ void loop(void)
   if (confTempDelay && (millis() - LastTempMillis > confTempDelay))
   {
     LastTempMillis = millis();
-    DEBUG_PRINT("Temperature for the device 1 (index 0) is: ");
+    DEBUG_PRINT(F("Temperature: "));
     DEBUG_PRINTLN(tempValue);
     //Serial.print((int)temperature);
     PublishFloat((char *)"Temperature", tempValue); // Publish temperature value on topic
