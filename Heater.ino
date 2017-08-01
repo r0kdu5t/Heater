@@ -20,13 +20,15 @@
 #define ENABLE_MAC_ADDRESS_ROM      false   // true/false
 #define MAC_I2C_ADDRESS             0x50   // Microchip 24AA125E48 I2C ROM address
 //
-static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };  // Set if no MAC ROM
-static uint8_t ip[] = { 192, 168, 1, 35 }; // Use if DHCP disabled
+// Important - Change following for each different device!!
+static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };  // Set if no MAC ROM 
+static uint8_t ip[] = { 192, 168, 1, 35 }; // Use if DHCP disabled. Ensure on correct network
 /* MQTT config */
 //IPAddress broker(192, 168, 62, 65);       // Address of the MQTT broker - "spunkmeyer.theatrix.priv"
 static uint8_t broker[] = { 192, 168, 62, 65 };
 // Topic base for all comms from this device.
 #define TOPICBASE "Home/Sneezy/"
+
 
 // Include the libraries we need
 #include <SPI.h>
@@ -110,6 +112,10 @@ void PushButton() // Interrupt Service Routine (ISR) with debounce
   last_interrupt_time = interrupt_time;
 }  // end of isr
 
+#ifdef ENABLE_MAC_ADDRESS_ROM
+/*
+   Required to read address from DS device, create MAC
+*/
 void ethernetFromDS() {
   byte i;
   byte dsAddress[8];
@@ -130,6 +136,7 @@ void ethernetFromDS() {
     mac[5] = dsAddress[7];
   }
 }
+#endif
 
 void reconnect() {
   // Loop until we're reconnected
@@ -415,42 +422,7 @@ void slowToggleLED(byte ledPin)
     slowLedTimer = millis ();
   }
 }
-/*
-   SSR control routine.
-*/
-/*void SSR_CTRL(boolean CTRL_STATE ) {
-  static bool SENT_STATUS = false;
-  if ( CTRL_STATE == true )
-  {
-   digitalWrite(SSR_PIN, HIGH);
-   //Serial.println("SSR_CTRL: ON ");
-   digitalWrite(BUTTON_LED_PIN, LOW);
-  }
-  else
-  {
-   digitalWrite(SSR_PIN, LOW);
-   //Serial.println("SSR_CTRL: OFF ");
-   digitalWrite(BUTTON_LED_PIN, HIGH);
-  }
 
-   if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
-   digitalWrite(SSR_PIN, HIGH);
-   Publish((char *)"SSR", (char *)"ON");
-   Serial.println("SSR_CTRL: ON ");
-   SENT_SSR_STATUS = true;
-   //
-   }
-   else if ( HEAT_CTRL == true && SENT_SSR_STATUS == false) {
-   // Do nothing - No repeat MQTT Publish
-   }
-   else if ( HEAT_CTRL == false && SENT_SSR_STATUS == false) {
-   digitalWrite(SSR_PIN, LOW);
-   Publish((char *)"SSR", (char *)"OFF");
-   Serial.println("SSR_CTRL: OFF ");
-   SENT_SSR_STATUS = false;
-   }
-
-  } */
 #ifdef ENABLE_MAC_ADDRESS_ROM
 /*
    Required to read the MAC address ROM
@@ -491,36 +463,4 @@ void PublishFloat(char *Topic, float Value)
   strcat(TopicBase, Topic);
   mqttClient.publish(TopicBase, Message);
 }
-/*
-  //
-  typedef enum {
-  ALL_OFF, HEAT_OFF, HEAT_ON, AUTO, FORCED
-  }
-  HeaterStates;
-  //
-  HeaterStates state = ALL_OFF;
-  HeaterStates lastState;
-
-  // if (buttonPushed)
-  // {
-  //   DEBUG_PRINTLN(F("Button Pressed"));
-  //   if (state == ALL_OFF)
-  //   {
-  //     state = AUTO; // Allow tStat to turn on and off itself
-  //   }
-  //   else if (state == AUTO)
-  //   {
-  //     state = HEAT_ON; // Manually turn output 'On'
-  //   }
-  //   else if (state == HEAT_ON)
-  //   {
-  //     state = HEAT_OFF; // Manually turn output 'Off'
-  //   }
-  //   else
-  //   {
-  //     state = ALL_OFF;
-  //   }
-  //   buttonPushed = false;
-  // }
-*/
 
